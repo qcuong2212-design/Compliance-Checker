@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VTG · Kiểm tra Tuân thủ Quy trình</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<style>
+:root {
+  --red:#C0001A; --red-dim:#8a0013;
+  --ink:#1A1A1A; --ink-2:#4A4A4A;
+  --rule:#E2E2E2; --bg:#F7F7F5; --surface:#FFFFFF;
+  --pass:#1A6B3A; --pass-bg:#EAF6EE;
+  --warn:#7A4A00; --warn-bg:#FFF5E0;
+  --fail:#9B1000; --fail-bg:#FFF0EE;
+  --mono:'Courier New',monospace;
+  --sans:'Segoe UI',system-ui,sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--ink);min-height:100vh;}
+
+/* HEADER */
+header{background:var(--red);color:#fff;padding:18px 32px;display:flex;align-items:center;gap:16px;border-bottom:3px solid var(--red-dim);position:sticky;top:0;z-index:100;}
+.logo-mark{width:40px;height:40px;background:#fff;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+header h1{font-size:17px;font-weight:700;letter-spacing:.3px;}
+header p{font-size:12px;opacity:.82;margin-top:2px;}
+.conn-badge{margin-left:auto;font-size:11px;padding:4px 10px;border-radius:20px;border:1.5px solid rgba(255,255,255,.4);display:flex;align-items:center;gap:6px;white-space:nowrap;}
+.dot{width:8px;height:8px;border-radius:50%;background:#aaa;}
+.dot.on{background:#5EE887;} .dot.off{background:#ff6b6b;}
+
+/* LAYOUT */
+main{max-width:900px;margin:0 auto;padding:32px 24px 80px;display:flex;flex-direction:column;gap:24px;}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:8px;overflow:hidden;}
+.card-head{padding:14px 20px;border-bottom:1px solid var(--rule);display:flex;align-items:center;gap:10px;}
+.card-head .step-num{width:24px;height:24px;background:var(--red);color:#fff;border-radius:50%;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.card-head h2{font-size:14px;font-weight:600;}
+.card-body{padding:20px;}
+
+/* UPLOAD */
+#drop-zone{border:2px dashed var(--rule);border-radius:8px;padding:40px 20px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;position:relative;}
+#drop-zone:hover,#drop-zone.drag-over{border-color:var(--red);background:#FFF5F6;}
+#drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+#drop-zone .icon{font-size:36px;margin-bottom:10px;display:block;}
+#drop-zone p{color:var(--ink-2);font-size:13px;}
+#drop-zone strong{color:var(--red);}
+#file-name{margin-top:12px;font-size:12px;color:var(--pass);font-weight:600;min-height:18px;}
+
+/* SETTINGS */
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.settings-grid.col3{grid-template-columns:2fr 1fr 1fr;}
+label.field{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--ink-2);font-weight:600;}
+label.field input,label.field select{padding:8px 10px;border:1px solid var(--rule);border-radius:6px;font-size:13px;color:var(--ink);background:var(--bg);font-family:var(--mono);outline:none;transition:border-color .2s;}
+label.field input:focus,label.field select:focus{border-color:var(--red);}
+.key-wrap{position:relative;}
+.key-wrap input{padding-right:70px;width:100%;}
+.key-toggle{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--red);cursor:pointer;font-weight:700;background:none;border:none;padding:2px 4px;}
+
+/* MODEL SELECTOR */
+.model-tabs{display:flex;gap:8px;margin-bottom:12px;}
+.model-tab{padding:6px 14px;border-radius:6px;border:1.5px solid var(--rule);font-size:12px;font-weight:700;cursor:pointer;background:var(--bg);color:var(--ink-2);transition:all .2s;}
+.model-tab.active{border-color:var(--red);background:#FFF0F2;color:var(--red);}
+
+/* BUTTON */
+#btn-check{width:100%;padding:14px;background:var(--red);color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:.5px;transition:background .2s,transform .1s;display:flex;align-items:center;justify-content:center;gap:8px;}
+#btn-check:hover:not(:disabled){background:var(--red-dim);}
+#btn-check:active:not(:disabled){transform:scale(.99);}
+#btn-check:disabled{background:#ccc;cursor:not-allowed;}
+
+/* PROGRESS */
+#progress-wrap{display:none;}
+.progress-bar-track{height:6px;background:var(--rule);border-radius:3px;overflow:hidden;margin-bottom:8px;}
+.progress-bar-fill{height:100%;width:0%;background:var(--red);border-radius:3px;transition:width .4s ease;}
+.progress-steps{display:flex;flex-direction:column;gap:6px;}
+.prog-step{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-2);}
+.prog-step .s-icon{width:16px;text-align:center;flex-shrink:0;}
+.prog-step.done{color:var(--pass);} .prog-step.active{color:var(--red);font-weight:600;} .prog-step.error{color:var(--fail);}
+
+/* RESULTS */
+#results{display:none;}
+.summary-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
+.sum-box{border-radius:8px;padding:14px 16px;border:1px solid transparent;}
+.sum-box.pass{background:var(--pass-bg);border-color:#b2dfc0;}
+.sum-box.warn{background:var(--warn-bg);border-color:#f0d890;}
+.sum-box.fail{background:var(--fail-bg);border-color:#f5b8b2;}
+.sum-box .num{font-size:28px;font-weight:800;line-height:1;}
+.sum-box.pass .num{color:var(--pass);} .sum-box.warn .num{color:var(--warn);} .sum-box.fail .num{color:var(--fail);}
+.sum-box .lbl{font-size:11px;color:var(--ink-2);margin-top:4px;}
+
+.check-table{width:100%;border-collapse:collapse;font-size:13px;}
+.check-table th{text-align:left;padding:8px 12px;background:var(--bg);font-size:11px;color:var(--ink-2);border-bottom:2px solid var(--rule);font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
+.check-table td{padding:8px 12px;border-bottom:1px solid var(--rule);vertical-align:top;}
+.check-table tr:last-child td{border-bottom:none;}
+.check-table tr:hover td{background:#fafafa;}
+
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;white-space:nowrap;}
+.badge.ok{background:var(--pass-bg);color:var(--pass);}
+.badge.emp{background:var(--warn-bg);color:var(--warn);}
+.badge.mis{background:var(--fail-bg);color:var(--fail);}
+
+.section-label{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--ink-2);padding:12px 0 6px;border-top:1px solid var(--rule);margin-top:16px;}
+.section-label:first-of-type{border-top:none;margin-top:0;}
+
+.ai-block{margin-top:12px;border-radius:6px;overflow:hidden;border:1px solid var(--rule);}
+.ai-block-head{padding:10px 14px;background:var(--bg);border-bottom:1px solid var(--rule);display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--ink-2);}
+.ai-block-head .gemini-tag{margin-left:auto;font-size:10px;padding:2px 7px;background:#e8f0fe;color:#1a73e8;border-radius:10px;font-weight:700;}
+.ai-block-body{padding:14px;font-size:13px;line-height:1.7;white-space:pre-wrap;word-break:break-word;}
+.ai-block-body.ok-text{color:var(--pass);font-weight:600;}
+.ai-block-body.warn-text{color:var(--warn);}
+
+/* INFO BOX */
+.info-box{background:#e8f0fe;border:1px solid #c5d8fc;border-radius:6px;padding:10px 14px;font-size:12px;color:#1557b0;margin-top:10px;}
+.info-box strong{display:block;margin-bottom:3px;}
+
+#btn-export{padding:10px 20px;background:var(--ink);color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;transition:background .2s;}
+#btn-export:hover{background:#333;}
+
+#toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:#fff;padding:12px 18px;border-radius:8px;font-size:13px;transform:translateY(80px);opacity:0;transition:all .3s;pointer-events:none;z-index:999;}
+#toast.show{transform:translateY(0);opacity:1;}
+
+.mt8{margin-top:8px;} .mt16{margin-top:16px;}
+.text-muted{color:var(--ink-2);font-size:12px;}
+@media(max-width:600px){.settings-grid,.settings-grid.col3{grid-template-columns:1fr;}.summary-bar{grid-template-columns:1fr 1fr;}main{padding:16px 12px 60px;}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-mark">
+    <svg viewBox="0 0 26 26" width="26" height="26"><rect width="26" height="26" rx="4" fill="#C0001A"/><text x="4" y="19" font-size="14" font-weight="800" fill="#fff" font-family="Arial">V</text></svg>
+  </div>
+  <div>
+    <h1>VTG · Kiểm tra Tuân thủ Quy trình</h1>
+    <p>Viettel Global — Chuyên viên Quản trị Quy trình</p>
+  </div>
+  <div class="conn-badge" id="conn-badge">
+    <div class="dot" id="conn-dot"></div>
+    <span id="conn-text">Chưa xác thực Gemini</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- BƯỚC 1: UPLOAD -->
+  <div class="card">
+    <div class="card-head"><div class="step-num">1</div><h2>Tải lên tài liệu quy trình</h2></div>
+    <div class="card-body">
+      <div id="drop-zone">
+        <input type="file" id="file-input" accept=".docx,.pdf">
+        <span class="icon">📄</span>
+        <p>Kéo thả file vào đây hoặc <strong>bấm để chọn</strong></p>
+        <p class="text-muted mt8">Hỗ trợ: <strong>.docx</strong> và <strong>.pdf</strong> — tối đa 20MB</p>
+        <div id="file-name"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BƯỚC 2: CHỌN MODEL -->
+  <div class="card">
+    <div class="card-head"><div class="step-num">2</div><h2>Chọn model AI (Tầng 2 — AI thẩm định)</h2></div>
+    <div class="card-body">
+
+      <!-- Model selector -->
+      <div style="margin-bottom:14px;">
+        <div style="font-size:12px;font-weight:700;color:var(--ink-2);margin-bottom:8px;">Chọn model Gemini</div>
+        <div class="model-tabs">
+          <button class="model-tab active" data-model="gemini-2.5-flash">gemini-2.5-flash</button>
+          <button class="model-tab" data-model="gemini-2.0-flash">gemini-2.0-flash</button>
+          <button class="model-tab" data-model="gemini-2.5-pro">gemini-2.5-pro</button>
+        </div>
+        <input type="hidden" id="gemini-model" value="gemini-2.5-flash">
+      </div>
+
+      <div class="info-box">
+        <strong>🔒 Hệ thống dùng chung của VTG</strong>
+        API key được quản lý tập trung trên server, không cần nhập key cá nhân.
+      </div>
+
+      <button style="margin-top:12px;padding:8px 16px;border:1.5px solid var(--red);background:#fff;color:var(--red);border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;" onclick="testServer()">
+        🔗 Kiểm tra kết nối hệ thống
+      </button>
+    </div>
+  </div>
+
+  <!-- BƯỚC 3: CHẠY -->
+  <div class="card">
+    <div class="card-head"><div class="step-num">3</div><h2>Thực hiện kiểm tra</h2></div>
+    <div class="card-body">
+      <button id="btn-check" disabled>
+        <span>🛡️</span> Bắt đầu kiểm tra tuân thủ
+      </button>
+      <div id="progress-wrap" class="mt16">
+        <div class="progress-bar-track"><div class="progress-bar-fill" id="prog-fill"></div></div>
+        <div class="progress-steps" id="prog-steps"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KẾT QUẢ -->
+  <div class="card" id="results">
+    <div class="card-head">
+      <div class="step-num">✓</div>
+      <h2>Kết quả kiểm tra</h2>
+      <div style="margin-left:auto"><button id="btn-export">⬇ Xuất báo cáo .txt</button></div>
+    </div>
+    <div class="card-body" id="results-body"></div>
+  </div>
+
+</main>
+<div id="toast"></div>
+
+<script>
+function makeAbortSignal(ms){const c=new AbortController();setTimeout(()=>c.abort(),ms);return c.signal;}
+
+pdfjsLib.GlobalWorkerOptions.workerSrc =
+  "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+// ══════════════════════════════════════════════════════
+// CẤU TRÚC 25 MỤC BẮT BUỘC VTG
+// ══════════════════════════════════════════════════════
+const STRUCTURE = [
+  {group:"TÓM TẮT QUY TRÌNH",  id:"tt_0", label:"Tiêu đề tóm tắt quy trình",                        kw:["TÓM TẮT QUY TRÌNH"]},
+  {group:"TÓM TẮT QUY TRÌNH",  id:"tt_1", label:"1. Phạm vi điều chỉnh và đối tượng áp dụng",        kw:["PHẠM VI ĐIỀU CHỈNH"]},
+  {group:"TÓM TẮT QUY TRÌNH",  id:"tt_2", label:"2a. Các hoạt động chính",                           kw:["HOẠT ĐỘNG CHÍNH"]},
+  {group:"TÓM TẮT QUY TRÌNH",  id:"tt_3", label:"2b. Vai trò tham gia",                              kw:["VAI TRÒ THAM GIA"]},
+  {group:"NỘI DUNG QUY TRÌNH", id:"nd_1", label:"1. Mục đích",                                       kw:["MỤC ĐÍCH"]},
+  {group:"NỘI DUNG QUY TRÌNH", id:"nd_2", label:"2. Phạm vi và đối tượng áp dụng",                   kw:["PHẠM VI VÀ ĐỐI TƯỢNG ÁP DỤNG","PHẠM VI VÀ ĐỐI TƯỢNG"]},
+  {group:"NỘI DUNG QUY TRÌNH", id:"nd_3", label:"3. Tài liệu liên quan",                             kw:["TÀI LIỆU LIÊN QUAN","TÀI LIỆU VIỆN DẪN"]},
+  {group:"NỘI DUNG QUY TRÌNH", id:"nd_4", label:"4. Giải thích thuật ngữ, định nghĩa, từ viết tắt",  kw:["THUẬT NGỮ","ĐỊNH NGHĨA","VIẾT TẮT"]},
+  {group:"NỘI DUNG QUY TRÌNH", id:"nd_4a",label:"   4.1 Giải thích thuật ngữ / định nghĩa",          kw:["4.1"]},
+  {group:"NỘI DUNG QUY TRÌNH", id:"nd_4b",label:"   4.2 Từ viết tắt",                                kw:["4.2"]},
+  {group:"NỘI DUNG QUY TRÌNH", id:"nd_5", label:"5. Ranh giới quy trình",                            kw:["RANH GIỚI QUY TRÌNH"]},
+  {group:"NỘI DUNG QUY TRÌNH", id:"nd_5a",label:"   5.x Sự kiện bắt đầu / kết thúc",                kw:["SỰ KIỆN BẮT ĐẦU","SỰ KIỆN KẾT THÚC"]},
+  {group:"NỘI DUNG QUY TRÌNH", id:"nd_5b",label:"   5.x Đầu vào / Đầu ra",                          kw:["ĐẦU VÀO","ĐẦU RA"]},
+  {group:"NỘI DUNG QUY TRÌNH", id:"nd_6", label:"6. Nội dung quy trình",                             kw:["NỘI DUNG QUY TRÌNH"]},
+  {group:"NỘI DUNG QUY TRÌNH", id:"nd_61",label:"   6.1 Lưu đồ quy trình",                           kw:["6.1","LƯU ĐỒ"]},
+  {group:"NỘI DUNG QUY TRÌNH", id:"nd_62",label:"   6.2 Thuyết minh quy trình",                      kw:["6.2","THUYẾT MINH"]},
+  {group:"NỘI DUNG QUY TRÌNH", id:"nd_63",label:"   6.3 Vai trò các bên liên quan (RASCI)",           kw:["6.3","VAI TRÒ CÁC BÊN","RASCI"]},
+  {group:"NỘI DUNG QUY TRÌNH", id:"nd_64",label:"   6.4 KPI đánh giá quy trình",                     kw:["6.4","KPI"]},
+  {group:"NỘI DUNG QUY TRÌNH", id:"nd_65",label:"   6.5 Rủi ro và chốt kiểm soát",                   kw:["6.5","RỦI RO","CHỐT KIỂM SOÁT"]},
+  {group:"NỘI DUNG QUY TRÌNH", id:"nd_66",label:"   6.6 Xử lý ngoại lệ",                             kw:["6.6","NGOẠI LỆ"]},
+  {group:"NỘI DUNG QUY TRÌNH", id:"nd_7", label:"7. Điều kiện tổ chức thực hiện",                    kw:["7.","TỔ CHỨC THỰC HIỆN"]},
+  {group:"NỘI DUNG QUY TRÌNH", id:"nd_8", label:"8. Biểu mẫu / Tài liệu hướng dẫn đính kèm",        kw:["8.","BIỂU MẪU"]},
+  {group:"NỘI DUNG QUY TRÌNH", id:"nd_9", label:"9. Hồ sơ lưu",                                     kw:["9.","HỒ SƠ LƯU"]},
+  {group:"NỘI DUNG QUY TRÌNH", id:"nd_10",label:"10. Phụ lục đính kèm",                              kw:["10.","PHỤ LỤC"]},
+];
+
+// ══════════════════════════════════════════════════════
+// AI CHECKS — 2 TASK CHUYÊN SÂU
+// ══════════════════════════════════════════════════════
+const LANG_RULE = `\n⚠️ BẮT BUỘC:\n- Toàn bộ câu trả lời PHẢI viết bằng tiếng Việt. KHÔNG dùng tiếng Anh.\n- KHÔNG viết lời chào, lời mở đầu, lời kết. Đi thẳng vào nội dung phân tích.\n- KHÔNG tóm tắt lại nhiệm vụ. Chỉ trả lời kết quả phân tích.\n`;
+
+const AI_CHECKS = [
+  // ── TASK I: THẨM ĐỊNH NỘI DUNG & LOGIC ──────────────
+  {
+    id:"content_step_name", label:"I.1 — Tên bước: Động từ + Tân ngữ", icon:"✍️", task:"I",
+    prompt:`Bạn là chuyên gia thẩm định quy trình cao cấp tại Viettel Global (VTG).
+${LANG_RULE}
+NHIỆM VỤ: Kiểm tra cột "Hoạt động" (tên bước) trong bảng Thuyết minh quy trình (mục 6.2).
+Chuẩn VTG: Tên bước BẮT BUỘC theo cấu trúc "Động từ hành chính + Tân ngữ cụ thể".
+VD đúng: "Lập dự toán ngân sách", "Phê duyệt hợp đồng", "Kiểm tra hồ sơ đầu vào".
+VD sai: "Dự toán ngân sách" (thiếu động từ), "Thực hiện các công việc liên quan" (tân ngữ mơ hồ), "Bước kiểm tra" (không đủ cấu trúc).
+
+QUY TẮC TRẢ LỜI:
+- Chỉ liệt kê bước SAI, không liệt kê bước đúng.
+- Mỗi lỗi 1 dòng: Bước [TT]: "[tên hiện tại]" → Lỗi: [mô tả ngắn bằng tiếng Việt] → Đề xuất: "[tên viết lại]"
+- Nếu tất cả đều đúng: chỉ ghi "KHÔNG CÓ LỖI"
+
+NỘI DUNG MỤC 6.2:
+`
+  },
+  {
+    id:"content_4elements", label:"I.2 — Mỗi bước đủ 4 yếu tố (Đầu vào / Đầu ra / Người làm / Cách thức)", icon:"🔲", task:"I",
+    prompt:`Bạn là chuyên gia thẩm định quy trình cao cấp tại Viettel Global (VTG).
+${LANG_RULE}
+NHIỆM VỤ: Kiểm tra từng bước trong bảng Thuyết minh quy trình (mục 6.2) xem có đủ 4 yếu tố bắt buộc:
+1. ĐẦU VÀO: Tài liệu/dữ liệu/điều kiện kích hoạt bước này
+2. ĐẦU RA: Sản phẩm/kết quả cụ thể khi hoàn thành bước
+3. NGƯỜI LÀM (Vai trò): Phòng ban/cá nhân chủ trì theo viết tắt VTG (P.TCKT, P.KTCN, BQL...)
+4. CÁCH THỨC: Mô tả chi tiết hành động thực hiện (không được để trống hoặc ghi chung chung)
+
+Lưu ý:
+- Từ chung chung KHÔNG hợp lệ ở NGƯỜI LÀM: "các bên liên quan", "phòng ban liên quan", "các đơn vị"
+- Từ mơ hồ KHÔNG hợp lệ ở CÁCH THỨC: kịp thời, nhanh chóng, linh hoạt, tùy thực tế, chủ động, phù hợp
+
+QUY TẮC TRẢ LỜI:
+- Chỉ liệt kê bước CÒN THIẾU yếu tố, không liệt kê bước đủ.
+- Mỗi lỗi 1 dòng: Bước [TT]: [tên bước] → Thiếu: [liệt kê yếu tố bị thiếu] → Đề xuất bổ sung: [nội dung cụ thể cần thêm]
+- Nếu tất cả đủ 4 yếu tố: chỉ ghi "KHÔNG CÓ LỖI"
+
+NỘI DUNG MỤC 6.2:
+`
+  },
+  // ── TASK II: KHUYẾN NGHỊ CHUYÊN GIA ─────────────────
+  {
+    id:"lean", label:"II.1 — Tinh gọn & Hiệu quả (Lean): Lãng phí & Nút thắt", icon:"⚡", task:"II",
+    prompt:`Bạn là chuyên gia tư vấn cải tiến quy trình (Lean/BPM) cao cấp tại Viettel Global (VTG).
+${LANG_RULE}
+NHIỆM VỤ: Phân tích toàn bộ mục 6.2 Thuyết minh quy trình theo tư duy Lean để nhận diện:
+
+A. ĐIỂM LÃNG PHÍ (Waste) — theo 8 loại lãng phí Lean (viết tên tiếng Việt):
+   - Lỗi/làm lại (Defects): bước dễ gây sai sót
+   - Sản xuất thừa (Overproduction): phê duyệt/báo cáo thừa không ai dùng
+   - Chờ đợi (Waiting): bước chờ phê duyệt, chờ thông tin kéo dài
+   - Lãng phí nhân tài (Non-utilized talent): bước giao sai người/cấp quá cao
+   - Vận chuyển thừa (Transportation): chuyển giao tài liệu qua nhiều tầng không cần thiết
+   - Tồn kho (Inventory): tài liệu tích lũy chờ xử lý hàng loạt
+   - Thao tác thừa (Motion): di chuyển thủ công không cần thiết
+   - Xử lý thừa (Extra processing): phê duyệt trung gian không tạo giá trị
+
+B. NÚT THẮT (Bottleneck): Bước nào là điểm nghẽn tiềm năng của toàn quy trình?
+
+C. ĐỀ XUẤT GỘP/LOẠI BỎ: Chỉ rõ bước nào nên gộp, bước nào nên loại bỏ và lý do.
+
+QUY TẮC TRẢ LỜI:
+- Viết hoàn toàn bằng tiếng Việt, súc tích, đánh số rõ ràng theo A/B/C.
+- Chỉ nêu vấn đề có căn cứ từ nội dung quy trình, không suy diễn.
+- Mỗi điểm ghi: Bước [TT] — [mô tả vấn đề] — [đề xuất cụ thể]
+
+NỘI DUNG MỤC 6.2:
+`
+  },
+  {
+    id:"digital", label:"II.2 — Tiềm năng Chuyển đổi số (RPA / AI / OCR / ký số...)", icon:"🤖", task:"II",
+    prompt:`Bạn là chuyên gia tư vấn chuyển đổi số cao cấp tại Viettel Global (VTG).
+${LANG_RULE}
+NHIỆM VỤ: Đọc toàn bộ mục 6.2 Thuyết minh quy trình, chủ động đề xuất ứng dụng công nghệ vào các bước thủ công cụ thể.
+
+Các công nghệ có thể đề xuất (không giới hạn):
+- RPA (Tự động hóa quy trình bằng robot): tự động hóa bước nhập liệu, copy dữ liệu, gửi email định kỳ
+- AI/ML: phân loại hồ sơ, nhận diện bất thường, dự báo
+- OCR: số hóa tài liệu giấy, trích xuất thông tin từ file scan
+- Ký số vOffice/VNPT-CA: thay thế ký tay trên văn bản
+- ERP/SAP: tích hợp luồng phê duyệt tự động
+- API kết nối hệ thống: loại bỏ nhập liệu thủ công giữa 2 hệ thống
+- Dashboard/BI: tự động tổng hợp báo cáo thay cho báo cáo thủ công
+
+QUY TẮC TRẢ LỜI:
+- Viết hoàn toàn bằng tiếng Việt.
+- Mỗi đề xuất 1 dòng: Bước [TT]: [tên bước] → Công nghệ đề xuất: [tên công nghệ] → Lợi ích: [mô tả ngắn lợi ích cụ thể]
+- Chỉ đề xuất khi có cơ sở từ nội dung bước, không đề xuất chung chung.
+- Nếu không có bước nào phù hợp: ghi "KHÔNG CÓ ĐỀ XUẤT PHÙ HỢP"
+
+NỘI DUNG MỤC 6.2:
+`
+  },
+  {
+    id:"integration", label:"II.3 — Tính liên kết hệ thống & chuẩn hóa đầu ra", icon:"🔗", task:"II",
+    prompt:`Bạn là chuyên gia quản trị hệ thống quy trình tại Viettel Global (VTG).
+${LANG_RULE}
+NHIỆM VỤ: Đánh giá tính liên kết hệ thống của quy trình trong mục 6.2, tập trung vào:
+
+A. ĐỒNG BỘ VỚI HỆ THỐNG TẬP ĐOÀN/TCT:
+   - Đầu ra của quy trình có được chuẩn hóa để tích hợp vào hệ thống quản lý cấp trên không?
+   - Có bước nào tạo ra đầu ra "trôi nổi" (file Excel riêng, email, ghi chép tay) thay vì vào hệ thống không?
+
+B. CHUẨN HÓA ĐẦU RA:
+   - Đầu ra của mỗi bước có được định nghĩa rõ tên biểu mẫu/mã tài liệu cụ thể không?
+   - Hay chỉ ghi chung chung "báo cáo", "tờ trình", "văn bản"?
+
+C. ĐIỂM RỦI RO TÍCH HỢP:
+   - Bước nào có nguy cơ gây mất đồng bộ dữ liệu giữa các hệ thống/phòng ban?
+
+QUY TẮC TRẢ LỜI:
+- Viết hoàn toàn bằng tiếng Việt, đánh số theo A/B/C.
+- Chỉ nhận xét dựa trên nội dung thực tế của quy trình, không suy diễn.
+- Mỗi điểm: Bước [TT] (nếu liên quan) — [nhận xét] — [đề xuất cải thiện]
+
+NỘI DUNG MỤC 6.2:
+`
+  },
+  {
+    id:"risk_kpi", label:"II.4 — Tư vấn Quản trị Rủi ro & KPIs", icon:"📊", task:"II",
+    prompt:`Bạn là chuyên gia tư vấn quản trị rủi ro và đo lường hiệu suất (KPI) tại Viettel Global (VTG).
+${LANG_RULE}
+NHIỆM VỤ: Đánh giá mục 6.4 (KPI) và 6.5 (Rủi ro & chốt kiểm soát) trong tài liệu quy trình, tập trung vào:
+
+A. ĐÁNH GIÁ KPI (mục 6.4):
+   - KPI có đủ SMART không? (Cụ thể - Đo lường được - Khả thi - Liên quan - Có thời hạn)
+   - KPI có thực sự đo được hành vi tích cực hay chỉ đo kết quả cuối cùng?
+   - Thiếu KPI nào quan trọng cho quy trình này?
+   - Có KPI nào có thể bị làm đẹp số liệu mà không cải thiện thực chất không?
+
+B. ĐÁNH GIÁ RỦI RO (mục 6.5):
+   - Rủi ro có được nhận diện đầy đủ cho các bước trọng yếu không?
+   - Biện pháp kiểm soát có thực tế và khả thi không?
+   - Có rủi ro nào quan trọng bị bỏ sót không?
+
+C. ĐỀ XUẤT BỔ SUNG:
+   - KPI nên thêm (kèm cách đo cụ thể).
+   - Rủi ro nên bổ sung (kèm biện pháp kiểm soát đề xuất).
+
+QUY TẮC TRẢ LỜI:
+- Viết hoàn toàn bằng tiếng Việt, đánh số theo A/B/C.
+- Đánh giá dựa trên nội dung thực tế của tài liệu, không bịa đặt.
+- Nếu mục 6.4 hoặc 6.5 để trống: ghi rõ "Mục [X] không có nội dung để đánh giá" và đề xuất xây dựng từ đầu.
+
+TOÀN BỘ NỘI DUNG QUY TRÌNH (bao gồm 6.4 và 6.5 nếu có):
+`
+  }
+];
+
+// ══════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════
+let fileContent = "";
+let fileName    = "";
+let reportText  = "";
+let selectedModel = "gemini-2.0-flash";
+
+// ══════════════════════════════════════════════════════
+// MODEL TABS
+// ══════════════════════════════════════════════════════
+document.querySelectorAll(".model-tab").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".model-tab").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    selectedModel = btn.dataset.model;
+    document.getElementById("gemini-model").value = selectedModel;
+  });
+});
+
+// ══════════════════════════════════════════════════════
+// KIỂM TRA KẾT NỐI SERVER (không cần key — server tự giữ key)
+// ══════════════════════════════════════════════════════
+async function testServer() {
+  const dot   = document.getElementById("conn-dot");
+  const text  = document.getElementById("conn-text");
+
+  text.textContent = "Đang kiểm tra…";
+  dot.className = "dot";
+
+  try {
+    const r = await fetch("/api/ping", { signal: makeAbortSignal(15000) });
+    const data = await r.json();
+    if (r.ok && data.ready) {
+      dot.className = "dot on";
+      text.textContent = "Hệ thống sẵn sàng ✓";
+      showToast("✅ Kết nối hệ thống thành công");
+      document.getElementById("btn-check").disabled = !fileContent;
+    } else {
+      dot.className = "dot off";
+      text.textContent = "Server chưa cấu hình key";
+      showToast("❌ Server chưa có GEMINI_API_KEY — liên hệ quản trị viên");
+    }
+  } catch(e) {
+    dot.className = "dot off";
+    text.textContent = "Không kết nối được server";
+    showToast("❌ Lỗi kết nối: " + e.message);
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// FILE UPLOAD
+// ══════════════════════════════════════════════════════
+const dropZone   = document.getElementById("drop-zone");
+const fileInput  = document.getElementById("file-input");
+const fileNameEl = document.getElementById("file-name");
+const btnCheck   = document.getElementById("btn-check");
+
+dropZone.addEventListener("dragover", e => { e.preventDefault(); dropZone.classList.add("drag-over"); });
+dropZone.addEventListener("dragleave", () => dropZone.classList.remove("drag-over"));
+dropZone.addEventListener("drop", e => { e.preventDefault(); dropZone.classList.remove("drag-over"); if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener("change", () => { if(fileInput.files[0]) handleFile(fileInput.files[0]); });
+
+async function handleFile(f) {
+  const ext = f.name.split(".").pop().toLowerCase();
+  if (!["docx","pdf"].includes(ext)) { showToast("❌ Chỉ hỗ trợ .docx và .pdf"); return; }
+  if (f.size > 20*1024*1024) { showToast("❌ File vượt quá 20MB"); return; }
+  fileNameEl.textContent = "⏳ Đang đọc file…";
+  fileName = f.name;
+  try {
+    fileContent = ext === "docx" ? await readDocx(f) : await readPdf(f);
+    fileNameEl.textContent = `✅ ${f.name} (${Math.round(f.size/1024)} KB — ${fileContent.length} ký tự trích xuất)`;
+    if (document.getElementById("conn-dot").classList.contains("on")) {
+      btnCheck.disabled = false;
+    } else {
+      showToast("⚠️ File đã tải. Nhớ kiểm tra kết nối hệ thống trước khi chạy.");
+    }
+  } catch(e) {
+    fileNameEl.textContent = `❌ Lỗi đọc file: ${e.message}`;
+  }
+}
+
+async function readDocx(f) {
+  const ab = await f.arrayBuffer();
+  const result = await mammoth.extractRawText({ arrayBuffer: ab });
+  if (!result.value) throw new Error("Không trích xuất được nội dung DOCX");
+  return result.value;
+}
+
+async function readPdf(f) {
+  const ab = await f.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: ab }).promise;
+  let text = "";
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page    = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    text += content.items.map(s => s.str).join(" ") + "\n";
+  }
+  if (!text.trim()) throw new Error("PDF không có text layer (file scan?) — cần OCR trước");
+  return text;
+}
+
+// ══════════════════════════════════════════════════════
+// PROGRESS
+// ══════════════════════════════════════════════════════
+const progWrap  = document.getElementById("progress-wrap");
+const progFill  = document.getElementById("prog-fill");
+const progSteps = document.getElementById("prog-steps");
+let steps = [];
+
+function initProgress(labels) {
+  steps = labels.map((l,i) => ({ label:l, id:"ps_"+i, state:"pending" }));
+  progSteps.innerHTML = steps.map(s =>
+    `<div class="prog-step" id="${s.id}"><span class="s-icon">○</span>${s.label}</div>`
+  ).join("");
+  progFill.style.width = "0%";
+  progWrap.style.display = "block";
+}
+
+function setStep(idx, state) {
+  if (!steps[idx]) return;
+  steps[idx].state = state;
+  const el = document.getElementById(steps[idx].id);
+  el.className = "prog-step " + (state==="done"?"done":state==="active"?"active":state==="error"?"error":"");
+  el.querySelector(".s-icon").textContent = {done:"✓",active:"◉",error:"✗",pending:"○"}[state]||"○";
+  const done = steps.filter(s=>s.state==="done").length;
+  progFill.style.width = Math.round((done/steps.length)*100)+"%";
+}
+
+// ══════════════════════════════════════════════════════
+// TẦNG 1 — STRUCTURE CHECK
+// ══════════════════════════════════════════════════════
+function checkStructure(text) {
+  const upper = text.toUpperCase();
+  return STRUCTURE.map(item => {
+    const found = item.kw.some(kw => upper.includes(kw));
+    if (!found) return { ...item, status:"missing" };
+    const idx     = upper.indexOf(item.kw.find(kw => upper.includes(kw)));
+    const snippet = upper.slice(idx, idx+200).replace(item.kw[0],"").trim();
+    return { ...item, status: snippet.length > 10 ? "ok" : "empty" };
+  });
+}
+
+// ══════════════════════════════════════════════════════
+// TRÍCH XUẤT MỤC 6.2
+// ══════════════════════════════════════════════════════
+function extract62(text) {
+  const lines = text.split("\n");
+  let inside = false, out = [];
+  for (const line of lines) {
+    const u = line.toUpperCase().trim();
+    if (!inside && (u.includes("6.2") || (u.includes("THUYẾT MINH") && u.includes("6")))) {
+      inside = true; out.push(line); continue;
+    }
+    if (inside && (u.includes("6.3") || u.includes("VAI TRÒ CÁC BÊN") || /^7[\.\s]/.test(u) || u.includes("TỔ CHỨC THỰC HIỆN"))) break;
+    if (inside) out.push(line);
+  }
+  return out.join("\n").trim();
+}
+
+// ══════════════════════════════════════════════════════
+// TẦNG 2 — Gọi qua backend /api/check (key giữ trên server)
+// ══════════════════════════════════════════════════════
+async function callGemini(systemPrompt, inputContent, retries = 3) {
+  const model = selectedModel;
+  const fullPrompt = systemPrompt + "\n" + inputContent;
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const r = await fetch("/api/check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: fullPrompt, model }),
+        signal: makeAbortSignal(120000)
+      });
+
+      // Rate limit (429) hoặc server overload (503) → đợi rồi retry
+      if (r.status === 429 || r.status === 503) {
+        const waitSec = attempt * 8; // 8s, 16s, 24s
+        const stepEls = document.querySelectorAll(".prog-step.active .s-icon");
+        if (stepEls.length) stepEls[0].textContent = `↺${attempt}`;
+        lastError = new Error(`HTTP ${r.status} — hệ thống đang quá tải`);
+        await sleep(waitSec * 1000);
+        continue;
+      }
+
+      const data = await r.json();
+
+      if (!r.ok) {
+        throw new Error(data?.error?.message || data?.error || `HTTP ${r.status}`);
+      }
+
+      const candidate = data?.candidates?.[0];
+      if (candidate?.finishReason === "SAFETY") {
+        return "⚠️ Gemini từ chối trả lời do bộ lọc an toàn (SAFETY) — thử rút ngắn nội dung đầu vào.";
+      }
+      const raw = candidate?.content?.parts?.[0]?.text || "";
+      if (!raw.trim()) {
+        return `⚠️ Gemini trả về rỗng. finishReason: ${candidate?.finishReason || "không rõ"}`;
+      }
+      if (candidate?.finishReason === "MAX_TOKENS") {
+        return raw.trim() + "\n\n⚠️ [CẢNH BÁO: Câu trả lời bị cắt do vượt giới hạn token]";
+      }
+      return raw.trim();
+
+    } catch(e) {
+      lastError = e;
+      if (attempt < retries) await sleep(5000);
+    }
+  }
+  throw new Error(`Lỗi sau ${retries} lần thử: ${lastError?.message || "không rõ nguyên nhân"}`);
+}
+
+// ══════════════════════════════════════════════════════
+// MAIN FLOW
+// ══════════════════════════════════════════════════════
+btnCheck.addEventListener("click", async () => {
+  if (!fileContent) return;
+  btnCheck.disabled = true;
+  document.getElementById("results").style.display = "none";
+  reportText = "";
+
+  // Task II.4 cần toàn bộ nội dung (bao gồm 6.4, 6.5)
+  // Các Task I và II.1-3 chỉ cần mục 6.2
+  const stepLabels = [
+    "Đọc nội dung tài liệu",
+    "Kiểm tra cấu trúc 25 mục bắt buộc",
+    "Trích xuất nội dung phân tích",
+    ...AI_CHECKS.map(c => `${c.icon} ${c.label}`),
+    "Tổng hợp kết quả"
+  ];
+  initProgress(stepLabels);
+
+  try {
+    setStep(0,"active"); await sleep(300); setStep(0,"done");
+
+    setStep(1,"active");
+    const structResults = checkStructure(fileContent);
+    await sleep(200); setStep(1,"done");
+
+    setStep(2,"active");
+    const content62   = extract62(fileContent);
+    await sleep(200); setStep(2,"done");
+
+    const aiResults = [];
+    for (let i = 0; i < AI_CHECKS.length; i++) {
+      const si = 3 + i;
+      setStep(si,"active");
+      // Delay 3s giữa các lần gọi để tránh Gemini rate limit
+      if (i > 0) await sleep(3000);
+      try {
+        // Task II.4 (risk_kpi) dùng toàn bộ nội dung để đánh giá cả 6.4 và 6.5
+        const inputContent = AI_CHECKS[i].id === "risk_kpi" ? fileContent : content62;
+        const noContent    = AI_CHECKS[i].id === "risk_kpi" ? !fileContent : !content62;
+
+        const res = noContent
+          ? "⚠️ Không tìm thấy nội dung phù hợp trong tài liệu"
+          : await callGemini(AI_CHECKS[i].prompt, inputContent);
+        aiResults.push({ ...AI_CHECKS[i], result: res });
+        setStep(si,"done");
+      } catch(e) {
+        aiResults.push({ ...AI_CHECKS[i], result: `❌ Lỗi Gemini: ${e.message}` });
+        setStep(si,"error");
+      }
+    }
+
+    const li = stepLabels.length - 1;
+    setStep(li,"active"); await sleep(200); setStep(li,"done");
+
+    renderResults(structResults, aiResults, content62);
+  } catch(e) {
+    showToast("❌ Lỗi hệ thống: " + e.message);
+  } finally {
+    btnCheck.disabled = false;
+  }
+});
+
+// ══════════════════════════════════════════════════════
+// RENDER RESULTS
+// ══════════════════════════════════════════════════════
+function renderResults(structRes, aiRes, content62) {
+  const ok    = structRes.filter(r=>r.status==="ok").length;
+  const empty = structRes.filter(r=>r.status==="empty").length;
+  const miss  = structRes.filter(r=>r.status==="missing").length;
+
+  reportText  = `VTG COMPLIANCE CHECKER — Báo cáo kiểm tra tuân thủ\n`;
+  reportText += `Tài liệu: ${fileName}\n`;
+  reportText += `Model AI: ${selectedModel}\n`;
+  reportText += `Thời điểm: ${new Date().toLocaleString("vi-VN")}\n`;
+  reportText += "=".repeat(60)+"\n\n";
+  reportText += `TỔNG HỢP CẤU TRÚC: ĐỦ ${ok} | TRỐNG ${empty} | THIẾU ${miss}\n\n`;
+
+  let html = `<div class="summary-bar">
+    <div class="sum-box pass"><div class="num">${ok}</div><div class="lbl">✅ Đủ & có nội dung</div></div>
+    <div class="sum-box warn"><div class="num">${empty}</div><div class="lbl">⚠️ Có tiêu đề nhưng trống</div></div>
+    <div class="sum-box fail"><div class="num">${miss}</div><div class="lbl">❌ Thiếu hoàn toàn</div></div>
+  </div>`;
+
+  // ── TẦNG 1: Cấu trúc ──
+  html += `<div class="section-label">TẦNG 1 — Cấu trúc 25 mục bắt buộc</div>`;
+  html += `<table class="check-table"><thead><tr><th>#</th><th>Mục cấu trúc</th><th>Nhóm</th><th>Trạng thái</th></tr></thead><tbody>`;
+  reportText += "TẦNG 1 — CẤU TRÚC 25 MỤC\n"+"-".repeat(40)+"\n";
+  let lastGroup = "";
+  structRes.forEach((r,i) => {
+    const badge = r.status==="ok"
+      ? `<span class="badge ok">✅ ĐỦ</span>`
+      : r.status==="empty"
+        ? `<span class="badge emp">⚠️ TRỐNG</span>`
+        : `<span class="badge mis">❌ THIẾU</span>`;
+    const grp = r.group !== lastGroup ? r.group : ""; lastGroup = r.group;
+    html += `<tr><td style="color:var(--ink-2);font-size:11px">${i+1}</td><td>${r.label}</td><td style="font-size:11px;color:var(--ink-2)">${grp}</td><td>${badge}</td></tr>`;
+    reportText += `  [${r.status==="ok"?"ĐỦ":r.status==="empty"?"TRỐNG":"THIẾU"}] ${r.label}\n`;
+  });
+  html += "</tbody></table>";
+
+  // ── TẦNG 2: Task I — Thẩm định nội dung & logic ──
+  const task1 = aiRes.filter(r => r.task === "I");
+  const task2 = aiRes.filter(r => r.task === "II");
+
+  if (!content62) {
+    html += `<div class="section-label" style="margin-top:24px">TẦNG 2 — AI thẩm định</div>
+      <p class="text-muted mt8">⚠️ Không tìm thấy mục 6.2 trong tài liệu — không thể thẩm định.</p>`;
+    reportText += "\nTẦNG 2: Không tìm thấy mục 6.2\n";
+  } else {
+    // Task I header
+    html += `<div class="section-label" style="margin-top:24px; color:var(--red); border-top:2px solid var(--red)">
+      TẦNG 2 — TASK I: THẨM ĐỊNH NỘI DUNG & LOGIC (Content Check)
+    </div>`;
+    reportText += "\n" + "=".repeat(60) + "\nTẦNG 2 — TASK I: THẨM ĐỊNH NỘI DUNG & LOGIC\n" + "=".repeat(60) + "\n";
+
+    task1.forEach(r => {
+      const isOk  = r.result.toUpperCase().includes("KHÔNG CÓ LỖI");
+      const isErr = r.result.startsWith("⚠️") || r.result.startsWith("❌");
+      html += `<div class="ai-block">
+        <div class="ai-block-head">
+          ${r.icon} ${r.label}
+          <span class="gemini-tag" style="margin-left:auto">✦ ${selectedModel}</span>
+        </div>
+        <div class="ai-block-body ${isOk?"ok-text":isErr?"warn-text":""}">${escHtml(r.result)}</div>
+      </div>`;
+      reportText += `\n[${r.label}]\n${r.result}\n`;
+    });
+
+    // Task II header
+    html += `<div class="section-label" style="margin-top:28px; color:#1A4FA0; border-top:2px solid #1A4FA0">
+      TẦNG 2 — TASK II: KHUYẾN NGHỊ CHUYÊN GIA & CẢI TIẾN
+    </div>`;
+    reportText += "\n" + "=".repeat(60) + "\nTẦNG 2 — TASK II: KHUYẾN NGHỊ CHUYÊN GIA & CẢI TIẾN\n" + "=".repeat(60) + "\n";
+
+    task2.forEach(r => {
+      const isErr = r.result.startsWith("⚠️") || r.result.startsWith("❌");
+      html += `<div class="ai-block" style="border-color:#c5d5f0">
+        <div class="ai-block-head" style="background:#f0f4fc">
+          ${r.icon} ${r.label}
+          <span class="gemini-tag" style="margin-left:auto">✦ ${selectedModel}</span>
+        </div>
+        <div class="ai-block-body ${isErr?"warn-text":""}">${escHtml(r.result)}</div>
+      </div>`;
+      reportText += `\n[${r.label}]\n${r.result}\n`;
+    });
+  }
+
+  document.getElementById("results-body").innerHTML = html;
+  document.getElementById("results").style.display = "block";
+  document.getElementById("results").scrollIntoView({ behavior:"smooth", block:"start" });
+}
+
+// ══════════════════════════════════════════════════════
+// EXPORT
+// ══════════════════════════════════════════════════════
+document.getElementById("btn-export").addEventListener("click", () => {
+  if (!reportText) { showToast("Chưa có kết quả"); return; }
+  const blob = new Blob([reportText], { type:"text/plain;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `VTG_Compliance_${fileName.replace(/\.[^.]+$/,"")}_${Date.now()}.txt`;
+  a.click();
+  showToast("✅ Đã xuất báo cáo");
+});
+
+// ══════════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════════
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 3500);
+}
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function escHtml(s) { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+</script>
+</body>
+</html>
