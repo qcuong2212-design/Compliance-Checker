@@ -619,31 +619,38 @@ function checkStructure(text) {
     const snippet = upper.slice(foundIdx + foundKw.length, foundIdx + foundKw.length + 150).trim();
     const status  = snippet.length > 5 ? "ok" : "empty";
 
-    // Đếm số lần xuất hiện của keyword chính trong toàn bộ nội dung (từ searchFrom)
+    // Đếm số lần keyword xuất hiện ở VỊ TRÍ TIÊU ĐỀ (đầu dòng hoặc sau ký tự phân cách)
+    // Loại trừ trường hợp keyword nằm giữa câu văn (trước keyword là chữ/số liền)
     let count = 0;
     let scanPos = searchFrom;
     while (true) {
       const idx = upper.indexOf(foundKw, scanPos);
       if (idx === -1) break;
-      count++;
+      // Kiểm tra ký tự ngay trước keyword — nếu là chữ/số thì bỏ qua (keyword nằm giữa câu)
+      const charBefore = idx > 0 ? upper[idx - 1] : "\n";
+      const isHeading  = /[\n\r\t\|\*\-\s#]/.test(charBefore) || idx === 0;
+      if (isHeading) count++;
       scanPos = idx + foundKw.length;
     }
+    // Fallback: nếu count=0 (keyword chỉ xuất hiện giữa câu) thì trả về 1 (đã tìm thấy)
+    if (count === 0) count = 1;
 
     return { ...item, status, pos: foundIdx, count };
   });
 
-  // ── Bước 2: Kiểm tra thứ tự — chỉ so sánh trong cùng nhóm liên tiếp ──
-  // Reset lastPos khi chuyển nhóm để tránh so sánh xuyên nhóm
-  let lastPos   = -1;
-  let lastGroup = "";
+  // ── Bước 2: Kiểm tra thứ tự toàn file (không reset theo nhóm) ──
+  // Phân biệt 2 loại lỗi thứ tự:
+  // - "wrong_order": mục xuất hiện trước mục liền trước nó trong STRUCTURE (thứ tự thực sự sai)
+  // - "out_of_section": mục có pos đúng thứ tự nhưng nằm ngoài vị trí kỳ vọng theo biểu mẫu
+  //   (ví dụ: Mục đích nằm trong phần Tóm tắt thay vì phần Nội dung)
+  let lastPos = -1;
   for (let i = 0; i < results.length; i++) {
     const r = results[i];
     if (r.status === "missing") { lastPos = -1; continue; }
-    if (r.group !== lastGroup) { lastPos = -1; lastGroup = r.group; }
-    if (lastPos !== -1 && r.pos < lastPos) {
+    if (lastPos !== -1 && r.pos !== -1 && r.pos < lastPos) {
       results[i].status = "wrong_order";
     } else {
-      lastPos = r.pos;
+      if (r.pos !== -1) lastPos = r.pos;
     }
   }
 
@@ -889,11 +896,16 @@ function renderResults(structRes, aiRes, content62) {
     const statusLabel = r.status==="ok"?"ĐỦ":r.status==="empty"?"TRỐNG":r.status==="wrong_order"?"SAI THỨ TỰ":"THIẾU";
     const grp = r.group !== lastGroup ? r.group : ""; lastGroup = r.group;
 
-    // Ghi chú: chỉ hiển thị khi mục xuất hiện nhiều hơn 1 lần
-    const noteHtml = (r.count > 1)
-      ? `<span style="color:#7A4A00;font-size:11px;font-weight:600">⚠️ Xuất hiện ${r.count} lần trong tài liệu</span>`
-      : ``;
-    const noteText = (r.count > 1) ? `Xuất hiện ${r.count} lần` : "";
+    // Ghi chú: xuất hiện nhiều lần HOẶC sai thứ tự (kèm vị trí thực tế)
+    let noteHtml = "";
+    let noteText = "";
+    if (r.status === "wrong_order") {
+      noteHtml = `<span style="color:#9B1000;font-size:11px;font-weight:600">⚠️ Mục này xuất hiện trước vị trí quy định trong biểu mẫu</span>`;
+      noteText = "Mục xuất hiện trước vị trí quy định";
+    } else if (r.count > 1) {
+      noteHtml = `<span style="color:#7A4A00;font-size:11px;font-weight:600">ℹ️ Xuất hiện ${r.count} lần — quy trình có ${r.count} mục con</span>`;
+      noteText = `Xuất hiện ${r.count} lần`;
+    }
 
     html += `<tr>
       <td style="color:var(--ink-2);font-size:11px">${i+1}</td>
