@@ -372,12 +372,12 @@ NỘI DUNG:
 ${LANG_RULE}
 KIỂM TRA: Từng bước có đủ 5 yếu tố:
 (1) Hoạt động: tên bước rõ ràng
-(2) Mô tả chi tiết: không mơ hồ (loại: kịp thời, nhanh chóng, linh hoạt, chủ động, phù hợp)
-(3) Vai trò: tên phòng/ban VTG cụ thể (loại: "các bên liên quan", "phòng ban liên quan")
-(4) Đầu vào: tài liệu/dữ liệu kích hoạt bước
-(5) Đầu ra: sản phẩm/kết quả cụ thể
+(2) Mô tả chi tiết: không mơ hồ (loại bỏ: kịp thời, nhanh chóng, linh hoạt, chủ động, phù hợp — không có tiêu chí cụ thể)
+(3) Vai trò: tên phòng/ban/chức danh VTG cụ thể — nếu cột Vai trò CÓ ghi tên đơn vị/phòng ban/chức danh cụ thể thì KHÔNG báo thiếu dù chung chung
+(4) Đầu vào: tài liệu/dữ liệu kích hoạt bước — nếu để trống hoặc ghi "-" mới báo thiếu
+(5) Đầu ra: kết quả/sản phẩm cụ thể — nếu để trống hoặc ghi "-" mới báo thiếu
 
-CHỈ liệt kê bước THIẾU. Mỗi lỗi 1 dòng:
+CHỈ liệt kê bước THỰC SỰ THIẾU (có bằng chứng rõ ràng từ nội dung bảng). Mỗi lỗi 1 dòng:
 Bước [TT]: [tên bước] → Thiếu: [yếu tố] → Cần: [nội dung cụ thể]
 Không có lỗi → ghi: KHÔNG CÓ LỖI
 
@@ -386,17 +386,20 @@ NỘI DUNG:
   },
   // ── TASK II ──────────────────────────────────────────
   {
-    id:"lean", label:"II.1 — Lean: Lãng phí & Nút thắt", icon:"⚡", task:"II",
-    prompt:`Chuyên gia Lean/BPM tại VTG.
+    id:"logic", label:"II.1 — Tính logic của quy trình", icon:"🔍", task:"II",
+    prompt:`Chuyên gia thẩm định quy trình tại VTG.
 ${LANG_RULE}
-PHÂN TÍCH bảng Thuyết minh theo tư duy Lean. CHỈ nêu vấn đề có căn cứ, không suy diễn.
+NHẬN XÉT tính logic và mạch lạc của quy trình dựa trên toàn bộ nội dung bảng Thuyết minh. CHỈ nêu phát hiện có căn cứ từ nội dung, không suy diễn.
 
-A. LÃNG PHÍ — chỉ liệt kê loại thực sự xuất hiện:
-Bước [TT] — Loại: [tên] — Biểu hiện: [cụ thể] — Đề xuất: [hành động]
+Trả lời theo từng gạch đầu dòng ngắn gọn:
+- [Phát hiện]: [mô tả vấn đề cụ thể tại bước nào] → [Đề xuất điều chỉnh]
 
-B. NÚT THẮT — bước nào là điểm nghẽn và lý do.
-
-C. GỘP/LOẠI BỎ — bước [X]+[Y] gộp vì [lý do] / bỏ bước [Z] vì không tạo giá trị.
+Kiểm tra các tiêu chí sau (chỉ nêu tiêu chí có vấn đề):
+1. Thứ tự bước có hợp lý không (đầu ra bước trước có đúng là đầu vào bước sau không)?
+2. Có bước nào bị thiếu trong luồng xử lý thực tế không?
+3. Có bước nào trùng lặp chức năng không?
+4. Điều kiện rẽ nhánh (nếu có) có đầy đủ và rõ ràng không?
+5. Đầu ra cuối cùng của quy trình có khớp với Sự kiện kết thúc đã khai báo không?
 
 NỘI DUNG:
 `
@@ -405,33 +408,33 @@ NỘI DUNG:
     id:"digital", label:"II.2 — Chuyển đổi số (RPA / AI / OCR / ký số...)", icon:"🤖", task:"II",
     prompt:`Chuyên gia chuyển đổi số tại VTG.
 ${LANG_RULE}
-ĐỀ XUẤT công nghệ cho từng bước thủ công. CHỈ đề xuất khi có căn cứ rõ từ nội dung bước.
-Công nghệ tại VTG: RPA, AI/ML, OCR, ký số vOffice/VNPT-CA, ERP, API liên hệ thống, Dashboard/BI.
+ĐỀ XUẤT công nghệ cho các bước thủ công có tiềm năng số hóa cao nhất (tối đa 5 bước). CHỈ đề xuất khi có căn cứ rõ từ nội dung.
+Công nghệ tại VTG: RPA, AI/ML, OCR, ký số vOffice/VNPT-CA, ERP/SAP, API, Dashboard/BI.
 
 Mỗi đề xuất 1 dòng:
-Bước [TT]: [tên bước] → [Công nghệ] → Lợi ích: [1 câu cụ thể]
+Bước [TT]: [tên bước] → [Công nghệ] → [lợi ích 1 câu]
 Không có → ghi: KHÔNG CÓ ĐỀ XUẤT PHÙ HỢP
 
-NỘI DUNG:
+NỘI DUNG (chỉ bảng Thuyết minh):
 `
   },
   {
     id:"risk_kpi", label:"II.3 — KPIs & Rủi ro", icon:"📊", task:"II",
     prompt:`Chuyên gia quản trị rủi ro và KPI tại VTG.
 ${LANG_RULE}
-ĐÁNH GIÁ mục KPI (6.4) và Rủi ro (6.5). Nếu mục trống → ghi "Không có nội dung" và đề xuất phù hợp.
+ĐÁNH GIÁ ngắn gọn mục KPI (6.4) và Rủi ro (6.5). Nếu mục ghi "Không có" → bỏ qua phần đó và chuyển sang đề xuất bổ sung.
 
-A. KPI CẦN ĐIỀU CHỈNH (chỉ KPI có vấn đề):
-[Tên KPI] → Vấn đề: [tần suất quá dài/khó đo/không khả thi/chưa cụ thể/thiếu thời hạn] → Sửa: [ngắn gọn]
-KPI BỔ SUNG (tối đa 3):
-- [Tên KPI] | Cách đo: [công thức] | Tần suất: [...]
+A. KPI — CHỈ nêu KPI cần điều chỉnh (tần suất quá dài/khó đo/không khả thi/chưa cụ thể/thiếu thời hạn):
+[Tên KPI] → [vấn đề ngắn gọn] → Sửa: [cụ thể]
+Bổ sung (tối đa 3, chỉ KPI thực sự thiếu, đo được, có công thức):
+- [Tên] | [Công thức] | [Tần suất]
 
-B. RỦI RO CẦN ĐIỀU CHỈNH (chỉ rủi ro có vấn đề):
-[Tên rủi ro] → Vấn đề: [biện pháp chung/không khả thi/thiếu tần suất] → Sửa: [ngắn gọn]
-RỦI RO BỔ SUNG (tối đa 3):
-- [Tên rủi ro] | Biện pháp: [cụ thể]
+B. RỦI RO — CHỈ nêu rủi ro cần điều chỉnh (biện pháp chung/không khả thi):
+[Tên rủi ro] → [vấn đề ngắn gọn] → Sửa: [cụ thể]
+Bổ sung (tối đa 3, chỉ rủi ro trọng yếu thực sự thiếu):
+- [Tên rủi ro] | [Biện pháp kiểm soát cụ thể]
 
-TOÀN BỘ NỘI DUNG QUY TRÌNH:
+TOÀN BỘ NỘI DUNG QUY TRÌNH (mục 6.4 và 6.5):
 `
   }
 ];
@@ -928,13 +931,14 @@ function renderAITask(check, result) {
 
   // Hiển thị header Task II khi bắt đầu Task II đầu tiên
   if (check.task === "II") {
-    const h2 = document.getElementById("t2-task2-header");
-    if (h2) {
-      h2.style.display = "block";
-      h2.style.marginTop = "28px";
-      h2.style.color = "#1A4FA0";
-      h2.style.borderTop = "2px solid #1A4FA0";
-      container.parentNode.insertBefore(h2, container.nextSibling);
+    const existing = document.getElementById("t2-task2-injected");
+    if (!existing) {
+      const h2 = document.createElement("div");
+      h2.id = "t2-task2-injected";
+      h2.className = "section-label";
+      h2.style.cssText = "margin-top:28px;color:#1A4FA0;border-top:2px solid #1A4FA0";
+      h2.textContent = "TẦNG 2 — TASK II: KHUYẾN NGHỊ CHUYÊN GIA & CẢI TIẾN";
+      container.parentNode.insertBefore(h2, container);
     }
   }
 
