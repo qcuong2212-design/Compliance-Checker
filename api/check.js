@@ -21,8 +21,8 @@ export default async function handler(req, res) {
   }
 
   // Whitelist model được phép gọi — tránh client tự ý gọi model đắt tiền không kiểm soát
-  const ALLOWED_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.5-pro"];
-  const selectedModel = ALLOWED_MODELS.includes(model) ? model : "gemini-2.5-flash";
+  const ALLOWED_MODELS = ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.5-pro"];
+  const selectedModel = ALLOWED_MODELS.includes(model) ? model : "gemini-2.5-flash-lite";
 
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`;
 
