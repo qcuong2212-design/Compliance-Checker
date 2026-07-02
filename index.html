@@ -80,7 +80,7 @@ label.field input:focus,label.field select:focus{border-color:var(--red);}
 
 /* RESULTS */
 #results{display:none;}
-.summary-bar{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
+.summary-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
 .sum-box{border-radius:8px;padding:14px 16px;border:1px solid transparent;}
 .sum-box.pass{background:var(--pass-bg);border-color:#b2dfc0;}
 .sum-box.warn{background:var(--warn-bg);border-color:#f0d890;}
@@ -220,31 +220,128 @@ pdfjsLib.GlobalWorkerOptions.workerSrc =
 // ══════════════════════════════════════════════════════
 // CẤU TRÚC 25 MỤC BẮT BUỘC VTG
 // ══════════════════════════════════════════════════════
+// STRUCTURE bám chính xác biểu mẫu bắt buộc 9_BM_Quy_trinh.docx của VTG
+// Keyword KHÔNG chứa số thứ tự — kiểm tra theo nội dung và thứ tự xuất hiện
 const STRUCTURE = [
-  {group:"TÓM TẮT QUY TRÌNH",  id:"tt_0", label:"Tiêu đề tóm tắt quy trình",                        kw:["TÓM TẮT QUY TRÌNH"]},
-  {group:"TÓM TẮT QUY TRÌNH",  id:"tt_1", label:"1. Phạm vi điều chỉnh và đối tượng áp dụng",        kw:["PHẠM VI ĐIỀU CHỈNH"]},
-  {group:"TÓM TẮT QUY TRÌNH",  id:"tt_2", label:"2a. Các hoạt động chính",                           kw:["HOẠT ĐỘNG CHÍNH"]},
-  {group:"TÓM TẮT QUY TRÌNH",  id:"tt_3", label:"2b. Vai trò tham gia",                              kw:["VAI TRÒ THAM GIA"]},
-  {group:"NỘI DUNG QUY TRÌNH", id:"nd_1", label:"1. Mục đích",                                       kw:["MỤC ĐÍCH"]},
-  {group:"NỘI DUNG QUY TRÌNH", id:"nd_2", label:"2. Phạm vi và đối tượng áp dụng",                   kw:["PHẠM VI VÀ ĐỐI TƯỢNG ÁP DỤNG","PHẠM VI VÀ ĐỐI TƯỢNG"]},
-  {group:"NỘI DUNG QUY TRÌNH", id:"nd_3", label:"3. Tài liệu liên quan",                             kw:["TÀI LIỆU LIÊN QUAN","TÀI LIỆU VIỆN DẪN"]},
-  {group:"NỘI DUNG QUY TRÌNH", id:"nd_4", label:"4. Giải thích thuật ngữ, định nghĩa, từ viết tắt",  kw:["THUẬT NGỮ","ĐỊNH NGHĨA","VIẾT TẮT"]},
-  {group:"NỘI DUNG QUY TRÌNH", id:"nd_4a",label:"   4.1 Giải thích thuật ngữ / định nghĩa",          kw:["4.1"]},
-  {group:"NỘI DUNG QUY TRÌNH", id:"nd_4b",label:"   4.2 Từ viết tắt",                                kw:["4.2"]},
-  {group:"NỘI DUNG QUY TRÌNH", id:"nd_5", label:"5. Ranh giới quy trình",                            kw:["RANH GIỚI QUY TRÌNH"]},
-  {group:"NỘI DUNG QUY TRÌNH", id:"nd_5a",label:"   5.x Sự kiện bắt đầu / kết thúc",                kw:["SỰ KIỆN BẮT ĐẦU","SỰ KIỆN KẾT THÚC"]},
-  {group:"NỘI DUNG QUY TRÌNH", id:"nd_5b",label:"   5.x Đầu vào / Đầu ra",                          kw:["ĐẦU VÀO","ĐẦU RA"]},
-  {group:"NỘI DUNG QUY TRÌNH", id:"nd_6", label:"6. Nội dung quy trình",                             kw:["NỘI DUNG QUY TRÌNH"]},
-  {group:"NỘI DUNG QUY TRÌNH", id:"nd_61",label:"   6.1 Lưu đồ quy trình",                           kw:["6.1","LƯU ĐỒ"]},
-  {group:"NỘI DUNG QUY TRÌNH", id:"nd_62",label:"   6.2 Thuyết minh quy trình",                      kw:["6.2","THUYẾT MINH"]},
-  {group:"NỘI DUNG QUY TRÌNH", id:"nd_63",label:"   6.3 Vai trò các bên liên quan (RASCI)",           kw:["6.3","VAI TRÒ CÁC BÊN","RASCI"]},
-  {group:"NỘI DUNG QUY TRÌNH", id:"nd_64",label:"   6.4 KPI đánh giá quy trình",                     kw:["6.4","KPI"]},
-  {group:"NỘI DUNG QUY TRÌNH", id:"nd_65",label:"   6.5 Rủi ro và chốt kiểm soát",                   kw:["6.5","RỦI RO","CHỐT KIỂM SOÁT"]},
-  {group:"NỘI DUNG QUY TRÌNH", id:"nd_66",label:"   6.6 Xử lý ngoại lệ",                             kw:["6.6","NGOẠI LỆ"]},
-  {group:"NỘI DUNG QUY TRÌNH", id:"nd_7", label:"7. Điều kiện tổ chức thực hiện",                    kw:["7.","TỔ CHỨC THỰC HIỆN"]},
-  {group:"NỘI DUNG QUY TRÌNH", id:"nd_8", label:"8. Biểu mẫu / Tài liệu hướng dẫn đính kèm",        kw:["8.","BIỂU MẪU"]},
-  {group:"NỘI DUNG QUY TRÌNH", id:"nd_9", label:"9. Hồ sơ lưu",                                     kw:["9.","HỒ SƠ LƯU"]},
-  {group:"NỘI DUNG QUY TRÌNH", id:"nd_10",label:"10. Phụ lục đính kèm",                              kw:["10.","PHỤ LỤC"]},
+
+  // ── TRANG BÌA & THÔNG TIN KIỂM SOÁT ─────────────────────────────────
+  {group:"TRANG BÌA & THÔNG TIN KIỂM SOÁT",
+   id:"bm_header",  label:"Trang bìa: Tên tổ chức + Tên quy trình + Mã hiệu / Ngày hiệu lực / Lần ban hành",
+   kw:["TỔNG CÔNG TY CP ĐẦU TƯ QUỐC TẾ VIETTEL","MÃ HIỆU","NGÀY CÓ HIỆU LỰC","LẦN BAN HÀNH"]},
+
+  {group:"TRANG BÌA & THÔNG TIN KIỂM SOÁT",
+   id:"bm_sde",     label:"Bảng theo dõi sửa đổi (Nội dung bổ sung, sửa đổi / Ngày có hiệu lực)",
+   kw:["BẢNG THEO DÕI SỬA ĐỔI","NỘI DUNG BỔ SUNG, SỬA ĐỔI"]},
+
+  {group:"TRANG BÌA & THÔNG TIN KIỂM SOÁT",
+   id:"bm_sign",    label:"Bảng chữ ký: Đơn vị biên soạn / Thẩm định / Phê duyệt",
+   kw:["ĐƠN VỊ BIÊN SOẠN","THẨM ĐỊNH","PHÊ DUYỆT","CHỮ KÝ"]},
+
+  {group:"TRANG BÌA & THÔNG TIN KIỂM SOÁT",
+   id:"bm_muc_luc", label:"Mục lục",
+   kw:["MỤC LỤC"]},
+
+  // ── TÓM TẮT QUY TRÌNH ────────────────────────────────────────────────
+  {group:"TÓM TẮT QUY TRÌNH",
+   id:"tt_header",  label:"Tiêu đề phần: TÓM TẮT QUY TRÌNH",
+   kw:["TÓM TẮT QUY TRÌNH"]},
+
+  {group:"TÓM TẮT QUY TRÌNH",
+   id:"tt_pham_vi", label:"Phạm vi điều chỉnh và đối tượng áp dụng (Phạm vi + Đơn vị áp dụng)",
+   kw:["PHẠM VI ĐIỀU CHỈNH","ĐƠN VỊ ÁP DỤNG"]},
+
+  {group:"TÓM TẮT QUY TRÌNH",
+   id:"tt_hdchinh", label:"Tóm tắt quy trình — a. Các hoạt động chính",
+   kw:["CÁC HOẠT ĐỘNG CHÍNH","HOẠT ĐỘNG CHÍNH"]},
+
+  {group:"TÓM TẮT QUY TRÌNH",
+   id:"tt_vaitro",  label:"Tóm tắt quy trình — b. Vai trò tham gia (bảng Tên vai trò / Mô tả nhiệm vụ)",
+   kw:["VAI TRÒ THAM GIA","TÊN VAI TRÒ","MÔ TẢ NHIỆM VỤ"]},
+
+  // ── NỘI DUNG QUY TRÌNH ───────────────────────────────────────────────
+  {group:"NỘI DUNG QUY TRÌNH",
+   id:"nd_header",  label:"Tiêu đề phần: NỘI DUNG QUY TRÌNH",
+   kw:["NỘI DUNG QUY TRÌNH"]},
+
+  {group:"NỘI DUNG QUY TRÌNH",
+   id:"nd_mucdich", label:"Mục đích",
+   kw:["MỤC ĐÍCH"]},
+
+  {group:"NỘI DUNG QUY TRÌNH",
+   id:"nd_phamvi",  label:"Phạm vi và đối tượng áp dụng",
+   kw:["PHẠM VI VÀ ĐỐI TƯỢNG ÁP DỤNG"]},
+
+  {group:"NỘI DUNG QUY TRÌNH",
+   id:"nd_tailieu", label:"Tài liệu liên quan",
+   kw:["TÀI LIỆU LIÊN QUAN","TÀI LIỆU VIỆN DẪN"]},
+
+  {group:"NỘI DUNG QUY TRÌNH",
+   id:"nd_thuatngu",label:"Giải thích thuật ngữ, định nghĩa, khái niệm và từ viết tắt",
+   kw:["GIẢI THÍCH THUẬT NGỮ","THUẬT NGỮ, ĐỊNH NGHĨA"]},
+
+  {group:"NỘI DUNG QUY TRÌNH",
+   id:"nd_tn_kn",   label:"   └ Giải thích thuật ngữ, định nghĩa, khái niệm",
+   kw:["GIẢI THÍCH THUẬT NGỮ, ĐỊNH NGHĨA, KHÁI NIỆM","ĐỊNH NGHĨA, KHÁI NIỆM"]},
+
+  {group:"NỘI DUNG QUY TRÌNH",
+   id:"nd_viet_tat",label:"   └ Từ viết tắt",
+   kw:["TỪ VIẾT TẮT"]},
+
+  {group:"NỘI DUNG QUY TRÌNH",
+   id:"nd_ranhgioi",label:"Ranh giới quy trình",
+   kw:["RANH GIỚI QUY TRÌNH"]},
+
+  {group:"NỘI DUNG QUY TRÌNH",
+   id:"nd_sk",      label:"   └ Sự kiện bắt đầu và sự kiện kết thúc quy trình",
+   kw:["SỰ KIỆN BẮT ĐẦU","SỰ KIỆN KẾT THÚC"]},
+
+  {group:"NỘI DUNG QUY TRÌNH",
+   id:"nd_io",      label:"   └ Đầu vào và đầu ra của quy trình",
+   kw:["ĐẦU VÀO CỦA QUY TRÌNH","ĐẦU RA CỦA QUY TRÌNH"]},
+
+  {group:"NỘI DUNG QUY TRÌNH",
+   id:"nd_luudo",   label:"Nội dung quy trình — Lưu đồ quy trình",
+   kw:["LƯU ĐỒ QUY TRÌNH","LƯU ĐỒ"]},
+
+  {group:"NỘI DUNG QUY TRÌNH",
+   id:"nd_thuyetminh", label:"   └ Thuyết minh quy trình (bảng: Hoạt động / Mô tả chi tiết / Vai trò / Đầu vào / Đầu ra / Công cụ / Thời gian)",
+   kw:["THUYẾT MINH QUY TRÌNH","MÔ TẢ CHI TIẾT"]},
+
+  {group:"NỘI DUNG QUY TRÌNH",
+   id:"nd_rasci",   label:"   └ Vai trò các bên liên quan — a. Ma trận phân quyền (RASCI)",
+   kw:["MA TRẬN PHÂN QUYỀN","RASCI"]},
+
+  {group:"NỘI DUNG QUY TRÌNH",
+   id:"nd_anhxa",   label:"   └ Vai trò các bên liên quan — b. Vai trò ánh xạ theo mô hình tổ chức",
+   kw:["VAI TRÒ ÁNH XẠ","ÁNH XẠ VÀO MÔ HÌNH TỔ CHỨC"]},
+
+  {group:"NỘI DUNG QUY TRÌNH",
+   id:"nd_kpi",     label:"   └ KPI đánh giá quy trình (bảng: Tên KPI / Cách tính / Target / Tần suất / Đơn vị)",
+   kw:["KPI ĐÁNH GIÁ QUY TRÌNH","TÊN KPI","CÁCH TÍNH"]},
+
+  {group:"NỘI DUNG QUY TRÌNH",
+   id:"nd_ruiro",   label:"   └ Rủi ro và chốt kiểm soát (bảng: Sự kiện rủi ro / Nguyên nhân / Biện pháp / Loại kiểm soát)",
+   kw:["RỦI RO VÀ CHỐT KIỂM SOÁT","SỰ KIỆN RỦI RO NHẬN DIỆN","BIỆN PHÁP KIỂM SOÁT TƯƠNG ỨNG"]},
+
+  {group:"NỘI DUNG QUY TRÌNH",
+   id:"nd_ngoaile", label:"   └ Xử lý ngoại lệ (bảng: Trường hợp ngoại lệ / Mô tả / Phương án xử lý / Kiểm tra giám sát)",
+   kw:["XỬ LÝ NGOẠI LỆ","TRƯỜNG HỢP NGOẠI LỆ","PHƯƠNG ÁN XỬ LÝ"]},
+
+  {group:"NỘI DUNG QUY TRÌNH",
+   id:"nd_dkien",   label:"Điều kiện tổ chức thực hiện (bảng: Yếu tố phụ thuộc / Nhóm / Mức ưu tiên / Chủ trì)",
+   kw:["ĐIỀU KIỆN TỔ CHỨC THỰC HIỆN","YẾU TỐ PHỤ THUỘC"]},
+
+  {group:"NỘI DUNG QUY TRÌNH",
+   id:"nd_bieumau", label:"Biểu mẫu / Tài liệu hướng dẫn đính kèm (bảng: Tên tài liệu / Tham chiếu / Ghi chú)",
+   kw:["THAM CHIẾU TRONG QUY TRÌNH","TÀI LIỆU HƯỚNG DẪN ĐÍNH KÈM"]},
+
+  {group:"NỘI DUNG QUY TRÌNH",
+   id:"nd_hosoluU", label:"Hồ sơ lưu (bảng: Tên hồ sơ / Trách nhiệm lưu / Thời hạn lưu / Ghi chú)",
+   kw:["HỒ SƠ LƯU","TRÁCH NHIỆM LƯU","THỜI HẠN LƯU"]},
+
+  {group:"NỘI DUNG QUY TRÌNH",
+   id:"nd_phuluc",  label:"Phụ lục đính kèm (bảng: Tên phụ lục / Mã hiệu)",
+   kw:["PHỤ LỤC ĐÍNH KÈM","TÊN PHỤ LỤC"]},
 ];
 
 // ══════════════════════════════════════════════════════
@@ -253,151 +350,100 @@ const STRUCTURE = [
 const LANG_RULE = `\n⚠️ BẮT BUỘC:\n- Toàn bộ câu trả lời PHẢI viết bằng tiếng Việt. KHÔNG dùng tiếng Anh.\n- KHÔNG viết lời chào, lời mở đầu, lời kết. Đi thẳng vào nội dung phân tích.\n- KHÔNG tóm tắt lại nhiệm vụ. Chỉ trả lời kết quả phân tích.\n`;
 
 const AI_CHECKS = [
-  // ── TASK I: THẨM ĐỊNH NỘI DUNG & LOGIC ──────────────
+  // ── TASK I ───────────────────────────────────────────
   {
     id:"content_step_name", label:"I.1 — Tên bước: Động từ + Tân ngữ", icon:"✍️", task:"I",
-    prompt:`Bạn là chuyên gia thẩm định quy trình cao cấp tại Viettel Global (VTG).
+    prompt:`Chuyên gia thẩm định quy trình VTG.
 ${LANG_RULE}
-NHIỆM VỤ: Kiểm tra cột "Hoạt động" (tên bước) trong bảng Thuyết minh quy trình (mục 6.2).
-Chuẩn VTG: Tên bước BẮT BUỘC theo cấu trúc "Động từ hành chính + Tân ngữ cụ thể".
-VD đúng: "Lập dự toán ngân sách", "Phê duyệt hợp đồng", "Kiểm tra hồ sơ đầu vào".
-VD sai: "Dự toán ngân sách" (thiếu động từ), "Thực hiện các công việc liên quan" (tân ngữ mơ hồ), "Bước kiểm tra" (không đủ cấu trúc).
+KIỂM TRA: Cột "Hoạt động" trong bảng Thuyết minh — mỗi tên bước PHẢI theo cấu trúc "Động từ hành chính + Tân ngữ cụ thể".
+Sai: thiếu động từ, tân ngữ mơ hồ ("thực hiện các công việc liên quan"), không đủ cấu trúc.
 
-QUY TẮC TRẢ LỜI:
-- Chỉ liệt kê bước SAI, không liệt kê bước đúng.
-- Mỗi lỗi 1 dòng: Bước [TT]: "[tên hiện tại]" → Lỗi: [mô tả ngắn bằng tiếng Việt] → Đề xuất: "[tên viết lại]"
-- Nếu tất cả đều đúng: chỉ ghi "KHÔNG CÓ LỖI"
+CHỈ liệt kê bước SAI. Mỗi lỗi 1 dòng:
+Bước [TT]: "[tên hiện tại]" → Lỗi: [ngắn gọn] → Sửa: "[tên đúng]"
+Không có lỗi → ghi: KHÔNG CÓ LỖI
 
-NỘI DUNG MỤC 6.2:
+NỘI DUNG:
 `
   },
   {
     id:"content_4elements", label:"I.2 — Mỗi bước đủ 4 yếu tố (Đầu vào / Đầu ra / Người làm / Cách thức)", icon:"🔲", task:"I",
-    prompt:`Bạn là chuyên gia thẩm định quy trình cao cấp tại Viettel Global (VTG).
+    prompt:`Chuyên gia thẩm định quy trình VTG.
 ${LANG_RULE}
-NHIỆM VỤ: Kiểm tra từng bước trong bảng Thuyết minh quy trình (mục 6.2) xem có đủ 4 yếu tố bắt buộc:
-1. ĐẦU VÀO: Tài liệu/dữ liệu/điều kiện kích hoạt bước này
-2. ĐẦU RA: Sản phẩm/kết quả cụ thể khi hoàn thành bước
-3. NGƯỜI LÀM (Vai trò): Phòng ban/cá nhân chủ trì theo viết tắt VTG (P.TCKT, P.KTCN, BQL...)
-4. CÁCH THỨC: Mô tả chi tiết hành động thực hiện (không được để trống hoặc ghi chung chung)
+KIỂM TRA: Từng bước trong bảng Thuyết minh có đủ 4 yếu tố:
+(1) Đầu vào (2) Đầu ra cụ thể (3) Người làm = tên phòng/ban VTG rõ ràng (4) Cách thức = mô tả hành động, không mơ hồ.
+Không hợp lệ ở (3): "các bên liên quan", "phòng ban liên quan".
+Không hợp lệ ở (4): kịp thời, nhanh chóng, linh hoạt, chủ động, phù hợp (không có tiêu chí đo lường).
 
-Lưu ý:
-- Từ chung chung KHÔNG hợp lệ ở NGƯỜI LÀM: "các bên liên quan", "phòng ban liên quan", "các đơn vị"
-- Từ mơ hồ KHÔNG hợp lệ ở CÁCH THỨC: kịp thời, nhanh chóng, linh hoạt, tùy thực tế, chủ động, phù hợp
+CHỈ liệt kê bước THIẾU. Mỗi lỗi 1 dòng:
+Bước [TT]: [tên bước] → Thiếu: [yếu tố] → Cần bổ sung: [nội dung cụ thể]
+Không có lỗi → ghi: KHÔNG CÓ LỖI
 
-QUY TẮC TRẢ LỜI:
-- Chỉ liệt kê bước CÒN THIẾU yếu tố, không liệt kê bước đủ.
-- Mỗi lỗi 1 dòng: Bước [TT]: [tên bước] → Thiếu: [liệt kê yếu tố bị thiếu] → Đề xuất bổ sung: [nội dung cụ thể cần thêm]
-- Nếu tất cả đủ 4 yếu tố: chỉ ghi "KHÔNG CÓ LỖI"
-
-NỘI DUNG MỤC 6.2:
+NỘI DUNG:
 `
   },
-  // ── TASK II: KHUYẾN NGHỊ CHUYÊN GIA ─────────────────
+  // ── TASK II ──────────────────────────────────────────
   {
-    id:"lean", label:"II.1 — Tinh gọn & Hiệu quả (Lean): Lãng phí & Nút thắt", icon:"⚡", task:"II",
-    prompt:`Bạn là chuyên gia tư vấn cải tiến quy trình (Lean/BPM) cao cấp tại Viettel Global (VTG).
+    id:"lean", label:"II.1 — Lean: Lãng phí & Nút thắt", icon:"⚡", task:"II",
+    prompt:`Chuyên gia Lean/BPM tại VTG.
 ${LANG_RULE}
-NHIỆM VỤ: Phân tích toàn bộ mục 6.2 Thuyết minh quy trình theo tư duy Lean để nhận diện:
+PHÂN TÍCH bảng Thuyết minh theo tư duy Lean. CHỈ nêu vấn đề có căn cứ từ nội dung, không suy diễn.
 
-A. ĐIỂM LÃNG PHÍ (Waste) — theo 8 loại lãng phí Lean (viết tên tiếng Việt):
-   - Lỗi/làm lại (Defects): bước dễ gây sai sót
-   - Sản xuất thừa (Overproduction): phê duyệt/báo cáo thừa không ai dùng
-   - Chờ đợi (Waiting): bước chờ phê duyệt, chờ thông tin kéo dài
-   - Lãng phí nhân tài (Non-utilized talent): bước giao sai người/cấp quá cao
-   - Vận chuyển thừa (Transportation): chuyển giao tài liệu qua nhiều tầng không cần thiết
-   - Tồn kho (Inventory): tài liệu tích lũy chờ xử lý hàng loạt
-   - Thao tác thừa (Motion): di chuyển thủ công không cần thiết
-   - Xử lý thừa (Extra processing): phê duyệt trung gian không tạo giá trị
+A. LÃNG PHÍ — chỉ liệt kê loại thực sự xuất hiện (không liệt kê đủ 8 nếu không có):
+Bước [TT] — Loại lãng phí: [tên] — Biểu hiện: [cụ thể] — Đề xuất: [hành động]
 
-B. NÚT THẮT (Bottleneck): Bước nào là điểm nghẽn tiềm năng của toàn quy trình?
+B. NÚT THẮT — bước nào là điểm nghẽn và lý do cụ thể.
 
-C. ĐỀ XUẤT GỘP/LOẠI BỎ: Chỉ rõ bước nào nên gộp, bước nào nên loại bỏ và lý do.
+C. GỘP/LOẠI BỎ — bước [X] + [Y] gộp được vì [lý do] / bỏ bước [Z] vì không tạo giá trị.
 
-QUY TẮC TRẢ LỜI:
-- Viết hoàn toàn bằng tiếng Việt, súc tích, đánh số rõ ràng theo A/B/C.
-- Chỉ nêu vấn đề có căn cứ từ nội dung quy trình, không suy diễn.
-- Mỗi điểm ghi: Bước [TT] — [mô tả vấn đề] — [đề xuất cụ thể]
-
-NỘI DUNG MỤC 6.2:
+NỘI DUNG:
 `
   },
   {
-    id:"digital", label:"II.2 — Tiềm năng Chuyển đổi số (RPA / AI / OCR / ký số...)", icon:"🤖", task:"II",
-    prompt:`Bạn là chuyên gia tư vấn chuyển đổi số cao cấp tại Viettel Global (VTG).
+    id:"digital", label:"II.2 — Chuyển đổi số (RPA / AI / OCR / ký số...)", icon:"🤖", task:"II",
+    prompt:`Chuyên gia chuyển đổi số tại VTG.
 ${LANG_RULE}
-NHIỆM VỤ: Đọc toàn bộ mục 6.2 Thuyết minh quy trình, chủ động đề xuất ứng dụng công nghệ vào các bước thủ công cụ thể.
+ĐỀ XUẤT công nghệ cho từng bước thủ công trong bảng Thuyết minh. CHỈ đề xuất khi có căn cứ rõ từ nội dung bước.
+Công nghệ khả dụng tại VTG: RPA, AI/ML, OCR, ký số vOffice/VNPT-CA, ERP, API liên hệ thống, Dashboard/BI.
 
-Các công nghệ có thể đề xuất (không giới hạn):
-- RPA (Tự động hóa quy trình bằng robot): tự động hóa bước nhập liệu, copy dữ liệu, gửi email định kỳ
-- AI/ML: phân loại hồ sơ, nhận diện bất thường, dự báo
-- OCR: số hóa tài liệu giấy, trích xuất thông tin từ file scan
-- Ký số vOffice/VNPT-CA: thay thế ký tay trên văn bản
-- ERP/SAP: tích hợp luồng phê duyệt tự động
-- API kết nối hệ thống: loại bỏ nhập liệu thủ công giữa 2 hệ thống
-- Dashboard/BI: tự động tổng hợp báo cáo thay cho báo cáo thủ công
+Mỗi đề xuất 1 dòng:
+Bước [TT]: [tên bước] → [Công nghệ] → Lợi ích: [cụ thể, 1 câu]
+Không có → ghi: KHÔNG CÓ ĐỀ XUẤT PHÙ HỢP
 
-QUY TẮC TRẢ LỜI:
-- Viết hoàn toàn bằng tiếng Việt.
-- Mỗi đề xuất 1 dòng: Bước [TT]: [tên bước] → Công nghệ đề xuất: [tên công nghệ] → Lợi ích: [mô tả ngắn lợi ích cụ thể]
-- Chỉ đề xuất khi có cơ sở từ nội dung bước, không đề xuất chung chung.
-- Nếu không có bước nào phù hợp: ghi "KHÔNG CÓ ĐỀ XUẤT PHÙ HỢP"
-
-NỘI DUNG MỤC 6.2:
+NỘI DUNG:
 `
   },
   {
-    id:"integration", label:"II.3 — Tính liên kết hệ thống & chuẩn hóa đầu ra", icon:"🔗", task:"II",
-    prompt:`Bạn là chuyên gia quản trị hệ thống quy trình tại Viettel Global (VTG).
+    id:"integration", label:"II.3 — Liên kết hệ thống & chuẩn hóa đầu ra", icon:"🔗", task:"II",
+    prompt:`Chuyên gia quản trị hệ thống quy trình tại VTG.
 ${LANG_RULE}
-NHIỆM VỤ: Đánh giá tính liên kết hệ thống của quy trình trong mục 6.2, tập trung vào:
+ĐÁNH GIÁ bảng Thuyết minh theo 3 tiêu chí. CHỈ nêu điểm có vấn đề thực tế, không liệt kê hết.
 
-A. ĐỒNG BỘ VỚI HỆ THỐNG TẬP ĐOÀN/TCT:
-   - Đầu ra của quy trình có được chuẩn hóa để tích hợp vào hệ thống quản lý cấp trên không?
-   - Có bước nào tạo ra đầu ra "trôi nổi" (file Excel riêng, email, ghi chép tay) thay vì vào hệ thống không?
+A. ĐỒNG BỘ HỆ THỐNG: Đầu ra nào đang "trôi nổi" (Excel riêng, email, ghi tay) thay vì vào hệ thống?
+Bước [TT] — Vấn đề: [cụ thể] — Đề xuất: [hành động]
 
-B. CHUẨN HÓA ĐẦU RA:
-   - Đầu ra của mỗi bước có được định nghĩa rõ tên biểu mẫu/mã tài liệu cụ thể không?
-   - Hay chỉ ghi chung chung "báo cáo", "tờ trình", "văn bản"?
+B. CHUẨN HÓA ĐẦU RA: Đầu ra nào chỉ ghi chung chung ("báo cáo", "tờ trình") thiếu mã biểu mẫu cụ thể?
+Bước [TT] — Đang ghi: "[...]" — Cần chuẩn hóa thành: [tên/mã tài liệu cụ thể]
 
-C. ĐIỂM RỦI RO TÍCH HỢP:
-   - Bước nào có nguy cơ gây mất đồng bộ dữ liệu giữa các hệ thống/phòng ban?
+C. RỦI RO TÍCH HỢP: Bước nào có nguy cơ mất đồng bộ dữ liệu giữa phòng ban/hệ thống?
+Bước [TT] — Rủi ro: [cụ thể] — Kiểm soát đề xuất: [hành động]
 
-QUY TẮC TRẢ LỜI:
-- Viết hoàn toàn bằng tiếng Việt, đánh số theo A/B/C.
-- Chỉ nhận xét dựa trên nội dung thực tế của quy trình, không suy diễn.
-- Mỗi điểm: Bước [TT] (nếu liên quan) — [nhận xét] — [đề xuất cải thiện]
-
-NỘI DUNG MỤC 6.2:
+NỘI DUNG:
 `
   },
   {
-    id:"risk_kpi", label:"II.4 — Tư vấn Quản trị Rủi ro & KPIs", icon:"📊", task:"II",
-    prompt:`Bạn là chuyên gia tư vấn quản trị rủi ro và đo lường hiệu suất (KPI) tại Viettel Global (VTG).
+    id:"risk_kpi", label:"II.4 — Quản trị Rủi ro & KPIs", icon:"📊", task:"II",
+    prompt:`Chuyên gia quản trị rủi ro và KPI tại VTG.
 ${LANG_RULE}
-NHIỆM VỤ: Đánh giá mục 6.4 (KPI) và 6.5 (Rủi ro & chốt kiểm soát) trong tài liệu quy trình, tập trung vào:
+ĐÁNH GIÁ mục KPI và Rủi ro & chốt kiểm soát trong tài liệu. Nếu mục để trống → ghi rõ và đề xuất xây dựng từ đầu.
 
-A. ĐÁNH GIÁ KPI (mục 6.4):
-   - KPI có đủ SMART không? (Cụ thể - Đo lường được - Khả thi - Liên quan - Có thời hạn)
-   - KPI có thực sự đo được hành vi tích cực hay chỉ đo kết quả cuối cùng?
-   - Thiếu KPI nào quan trọng cho quy trình này?
-   - Có KPI nào có thể bị làm đẹp số liệu mà không cải thiện thực chất không?
+A. KPI — Với từng KPI hiện có:
+[Tên KPI]: SMART? [Có/Không — lý do ngắn] | Đo hành vi hay kết quả? | Có thể làm đẹp số không? | Đề xuất điều chỉnh (nếu cần)
+KPI nên bổ sung: [tên] — Cách đo: [công thức/tần suất]
 
-B. ĐÁNH GIÁ RỦI RO (mục 6.5):
-   - Rủi ro có được nhận diện đầy đủ cho các bước trọng yếu không?
-   - Biện pháp kiểm soát có thực tế và khả thi không?
-   - Có rủi ro nào quan trọng bị bỏ sót không?
+B. RỦI RO — Với từng rủi ro hiện có:
+[Tên rủi ro]: Biện pháp kiểm soát thực tế? [Có/Không — lý do] | Rủi ro trọng yếu còn thiếu: [tên + biện pháp đề xuất]
 
-C. ĐỀ XUẤT BỔ SUNG:
-   - KPI nên thêm (kèm cách đo cụ thể).
-   - Rủi ro nên bổ sung (kèm biện pháp kiểm soát đề xuất).
-
-QUY TẮC TRẢ LỜI:
-- Viết hoàn toàn bằng tiếng Việt, đánh số theo A/B/C.
-- Đánh giá dựa trên nội dung thực tế của tài liệu, không bịa đặt.
-- Nếu mục 6.4 hoặc 6.5 để trống: ghi rõ "Mục [X] không có nội dung để đánh giá" và đề xuất xây dựng từ đầu.
-
-TOÀN BỘ NỘI DUNG QUY TRÌNH (bao gồm 6.4 và 6.5 nếu có):
+TOÀN BỘ NỘI DUNG QUY TRÌNH:
 `
   }
 ];
@@ -534,32 +580,121 @@ function setStep(idx, state) {
 // ══════════════════════════════════════════════════════
 // TẦNG 1 — STRUCTURE CHECK
 // ══════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
+// TẦNG 1 — KIỂM TRA CẤU TRÚC + THỨ TỰ
+// ══════════════════════════════════════════════════════
 function checkStructure(text) {
   const upper = text.toUpperCase();
-  return STRUCTURE.map(item => {
-    const found = item.kw.some(kw => upper.includes(kw));
-    if (!found) return { ...item, status:"missing" };
-    const idx     = upper.indexOf(item.kw.find(kw => upper.includes(kw)));
-    const snippet = upper.slice(idx, idx+200).replace(item.kw[0],"").trim();
-    return { ...item, status: snippet.length > 10 ? "ok" : "empty" };
+
+  // Bước 1: Với mỗi mục, tìm vị trí (index) xuất hiện sớm nhất của keyword
+  const results = STRUCTURE.map(item => {
+    let foundIdx = -1;
+    let foundKw  = null;
+    for (const kw of item.kw) {
+      const idx = upper.indexOf(kw);
+      if (idx !== -1 && (foundIdx === -1 || idx < foundIdx)) {
+        foundIdx = idx;
+        foundKw  = kw;
+      }
+    }
+    if (foundIdx === -1) return { ...item, status:"missing", pos:-1 };
+    // Kiểm tra có nội dung thực sau keyword không
+    const snippet = upper.slice(foundIdx + foundKw.length, foundIdx + foundKw.length + 150).trim();
+    const status  = snippet.length > 5 ? "ok" : "empty";
+    return { ...item, status, pos: foundIdx };
   });
+
+  // Bước 2: Kiểm tra thứ tự — mục có nội dung phải xuất hiện KHÔNG TRƯỚC mục trước nó
+  let lastPos = -1;
+  for (let i = 0; i < results.length; i++) {
+    if (results[i].status === "missing") { lastPos = -1; continue; }
+    if (lastPos !== -1 && results[i].pos < lastPos) {
+      results[i].status = "wrong_order"; // Xuất hiện trước mục trước đó
+    } else {
+      lastPos = results[i].pos;
+    }
+  }
+
+  return results;
 }
 
 // ══════════════════════════════════════════════════════
-// TRÍCH XUẤT MỤC 6.2
+// TRÍCH XUẤT TẤT CẢ CÁC MỤC THUYẾT MINH / DIỄN GIẢI
+// Xử lý trường hợp quy trình có nhiều hơn 1 mục
 // ══════════════════════════════════════════════════════
-function extract62(text) {
+function extractAllSections(text) {
   const lines = text.split("\n");
-  let inside = false, out = [];
+
+  // Keyword nhận diện BẮT ĐẦU một mục thuyết minh/diễn giải (không chứa số)
+  const START_KW = [
+    "THUYẾT MINH QUY TRÌNH", "THUYẾT MINH LƯU ĐỒ",
+    "DIỄN GIẢI LƯU ĐỒ", "DIỄN GIẢI QUY TRÌNH",
+    "DIỄN GIẢI", "THUYẾT MINH"
+  ];
+
+  // Keyword nhận diện KẾT THÚC một mục (chuyển sang mục tiếp theo không phải thuyết minh)
+  const END_KW = [
+    "VAI TRÒ CÁC BÊN", "MA TRẬN PHÂN QUYỀN", "RASCI",
+    "VAI TRÒ ÁNH XẠ", "KPI ĐÁNH GIÁ", "TÊN KPI",
+    "RỦI RO VÀ CHỐT", "XỬ LÝ NGOẠI LỆ",
+    "ĐIỀU KIỆN TỔ CHỨC", "HỒ SƠ LƯU", "PHỤ LỤC ĐÍNH KÈM",
+    "BIỂU MẪU/TÀI LIỆU", "THAM CHIẾU TRONG QUY TRÌNH"
+  ];
+
+  const sections = [];   // Mảng chứa từng đoạn thuyết minh tìm được
+  let inside = false;
+  let current = [];
+  let sectionCount = 0;
+
   for (const line of lines) {
     const u = line.toUpperCase().trim();
-    if (!inside && (u.includes("6.2") || (u.includes("THUYẾT MINH") && u.includes("6")))) {
-      inside = true; out.push(line); continue;
+
+    // Phát hiện bắt đầu mục mới
+    const isStart = START_KW.some(kw => u.includes(kw));
+    // Phát hiện kết thúc mục hiện tại
+    const isEnd   = END_KW.some(kw => u.includes(kw));
+
+    if (isStart) {
+      // Lưu đoạn đang gom (nếu có) trước khi bắt đầu đoạn mới
+      if (inside && current.length > 0) {
+        sections.push({ idx: sectionCount, content: current.join("\n").trim() });
+        sectionCount++;
+        current = [];
+      }
+      inside = true;
+      current.push(line);
+      continue;
     }
-    if (inside && (u.includes("6.3") || u.includes("VAI TRÒ CÁC BÊN") || /^7[\.\s]/.test(u) || u.includes("TỔ CHỨC THỰC HIỆN"))) break;
-    if (inside) out.push(line);
+
+    if (inside && isEnd) {
+      // Kết thúc đoạn hiện tại
+      sections.push({ idx: sectionCount, content: current.join("\n").trim() });
+      sectionCount++;
+      current = [];
+      inside = false;
+      continue;
+    }
+
+    if (inside) current.push(line);
   }
-  return out.join("\n").trim();
+
+  // Lưu đoạn cuối nếu còn đang mở
+  if (inside && current.length > 0) {
+    sections.push({ idx: sectionCount, content: current.join("\n").trim() });
+  }
+
+  return sections; // [{idx:0, content:"..."}, {idx:1, content:"..."}]
+}
+
+// Giữ hàm extract62 như alias cho tương thích (trả về chuỗi ghép tất cả section)
+function extract62(text) {
+  const sections = extractAllSections(text);
+  if (sections.length === 0) return "";
+  return sections.map((s, i) =>
+    sections.length > 1
+      ? `=== MỤC THUYẾT MINH / DIỄN GIẢI ${i+1}/${sections.length} ===\n${s.content}`
+      : s.content
+  ).join("\n\n");
 }
 
 // ══════════════════════════════════════════════════════
@@ -645,14 +780,17 @@ btnCheck.addEventListener("click", async () => {
 
     setStep(2,"active");
     const content62   = extract62(fileContent);
+    const sectionCount = extractAllSections(fileContent).length;
     await sleep(200); setStep(2,"done");
+    if (sectionCount === 0) showToast("⚠️ Không tìm thấy mục Thuyết minh/Diễn giải — kiểm tra lại file");
+    else if (sectionCount > 1) showToast(`ℹ️ Tìm thấy ${sectionCount} mục Thuyết minh/Diễn giải — ghép lại để phân tích`);
 
     const aiResults = [];
     for (let i = 0; i < AI_CHECKS.length; i++) {
       const si = 3 + i;
       setStep(si,"active");
       // Delay 3s giữa các lần gọi để tránh Gemini rate limit
-      if (i > 0) await sleep(3000);
+      if (i > 0) await sleep(8000);
       try {
         // Task II.4 (risk_kpi) dùng toàn bộ nội dung để đánh giá cả 6.4 và 6.5
         const inputContent = AI_CHECKS[i].id === "risk_kpi" ? fileContent : content62;
@@ -687,17 +825,19 @@ function renderResults(structRes, aiRes, content62) {
   const ok    = structRes.filter(r=>r.status==="ok").length;
   const empty = structRes.filter(r=>r.status==="empty").length;
   const miss  = structRes.filter(r=>r.status==="missing").length;
+  const order = structRes.filter(r=>r.status==="wrong_order").length;
 
   reportText  = `VTG COMPLIANCE CHECKER — Báo cáo kiểm tra tuân thủ\n`;
   reportText += `Tài liệu: ${fileName}\n`;
   reportText += `Model AI: ${selectedModel}\n`;
   reportText += `Thời điểm: ${new Date().toLocaleString("vi-VN")}\n`;
   reportText += "=".repeat(60)+"\n\n";
-  reportText += `TỔNG HỢP CẤU TRÚC: ĐỦ ${ok} | TRỐNG ${empty} | THIẾU ${miss}\n\n`;
+  reportText += `CẤU TRÚC: ĐỦ ${ok} | TRỐNG ${empty} | SAI THỨ TỰ ${order} | THIẾU ${miss}\n\n`;
 
   let html = `<div class="summary-bar">
-    <div class="sum-box pass"><div class="num">${ok}</div><div class="lbl">✅ Đủ & có nội dung</div></div>
+    <div class="sum-box pass"><div class="num">${ok}</div><div class="lbl">✅ Đủ & đúng thứ tự</div></div>
     <div class="sum-box warn"><div class="num">${empty}</div><div class="lbl">⚠️ Có tiêu đề nhưng trống</div></div>
+    <div class="sum-box" style="background:#fff3cd;border-color:#ffc107"><div class="num" style="color:#856404">${order}</div><div class="lbl">🔀 Sai thứ tự so với biểu mẫu</div></div>
     <div class="sum-box fail"><div class="num">${miss}</div><div class="lbl">❌ Thiếu hoàn toàn</div></div>
   </div>`;
 
@@ -711,10 +851,13 @@ function renderResults(structRes, aiRes, content62) {
       ? `<span class="badge ok">✅ ĐỦ</span>`
       : r.status==="empty"
         ? `<span class="badge emp">⚠️ TRỐNG</span>`
-        : `<span class="badge mis">❌ THIẾU</span>`;
+        : r.status==="wrong_order"
+          ? `<span class="badge" style="background:#fff3cd;color:#856404">🔀 SAI THỨ TỰ</span>`
+          : `<span class="badge mis">❌ THIẾU</span>`;
+    const statusLabel = r.status==="ok"?"ĐỦ":r.status==="empty"?"TRỐNG":r.status==="wrong_order"?"SAI THỨ TỰ":"THIẾU";
     const grp = r.group !== lastGroup ? r.group : ""; lastGroup = r.group;
     html += `<tr><td style="color:var(--ink-2);font-size:11px">${i+1}</td><td>${r.label}</td><td style="font-size:11px;color:var(--ink-2)">${grp}</td><td>${badge}</td></tr>`;
-    reportText += `  [${r.status==="ok"?"ĐỦ":r.status==="empty"?"TRỐNG":"THIẾU"}] ${r.label}\n`;
+    reportText += `  [${statusLabel}] ${r.label}\n`;
   });
   html += "</tbody></table>";
 
