@@ -231,7 +231,7 @@ const STRUCTURE = [
 
   {group:"TRANG BÌA & THÔNG TIN KIỂM SOÁT",
    id:"bm_sde",     label:"Bảng theo dõi sửa đổi (Nội dung bổ sung, sửa đổi / Ngày có hiệu lực)",
-   kw:["BẢNG THEO DÕI SỬA ĐỔI","NỘI DUNG BỔ SUNG, SỬA ĐỔI"]},
+   kw:["BẢNG THEO DÕI SỬA ĐỔI","NỘI DUNG BỔ SUNG, SỬA ĐỔI","NỘI DUNG SỬA ĐỔI"]},
 
   {group:"TRANG BÌA & THÔNG TIN KIỂM SOÁT",
    id:"bm_sign",    label:"Bảng chữ ký: Đơn vị biên soạn / Thẩm định / Phê duyệt",
@@ -273,15 +273,16 @@ const STRUCTURE = [
 
   {group:"NỘI DUNG QUY TRÌNH",
    id:"nd_tailieu", label:"Tài liệu liên quan",
-   kw:["TÀI LIỆU LIÊN QUAN","TÀI LIỆU VIỆN DẪN"]},
+   kw:["TÀI LIỆU LIÊN QUAN","TÀI LIỆU VIỆN DẪN","TÀI LIỆU THAM KHẢO","TÀI LIỆU THAM KHẢO/LIÊN QUAN"]},
 
   {group:"NỘI DUNG QUY TRÌNH",
    id:"nd_thuatngu",label:"Giải thích thuật ngữ, định nghĩa, khái niệm và từ viết tắt",
-   kw:["GIẢI THÍCH THUẬT NGỮ","THUẬT NGỮ, ĐỊNH NGHĨA"]},
+   kw:["GIẢI THÍCH THUẬT NGỮ","THUẬT NGỮ, ĐỊNH NGHĨA","GIẢI THÍCH THUẬT NGỮ VÀ TỪ VIẾT TẮT"]},
 
   {group:"NỘI DUNG QUY TRÌNH",
    id:"nd_tn_kn",   label:"   └ Giải thích thuật ngữ, định nghĩa, khái niệm",
-   kw:["GIẢI THÍCH THUẬT NGỮ, ĐỊNH NGHĨA, KHÁI NIỆM","ĐỊNH NGHĨA, KHÁI NIỆM"]},
+   kw:["GIẢI THÍCH THUẬT NGỮ, ĐỊNH NGHĨA, KHÁI NIỆM","ĐỊNH NGHĨA, KHÁI NIỆM",
+       "CÁC ĐỊNH NGHĨA, THUẬT NGỮ","ĐỊNH NGHĨA, THUẬT NGỮ","CÁC THUẬT NGỮ, ĐỊNH NGHĨA"]},
 
   {group:"NỘI DUNG QUY TRÌNH",
    id:"nd_viet_tat",label:"   └ Từ viết tắt",
@@ -586,32 +587,63 @@ function setStep(idx, state) {
 function checkStructure(text) {
   const upper = text.toUpperCase();
 
-  // Bước 1: Với mỗi mục, tìm vị trí (index) xuất hiện sớm nhất của keyword
+  // ── Xác định điểm bắt đầu nội dung thực (sau toàn bộ header lặp) ──
+  // Header lặp = các dòng trang bìa lặp lại đầu file do DOCX có header/footer trên mỗi trang.
+  // Chiến lược: tìm vị trí của "BẢNG THEO DÕI SỬA ĐỔI" hoặc "TÓM TẮT QUY TRÌNH" làm mốc
+  // bắt đầu nội dung thực — sau đó chỉ tìm keyword từ vị trí này trở đi.
+  const CONTENT_START_KW = ["BẢNG THEO DÕI SỬA ĐỔI","TÓM TẮT QUY TRÌNH","NỘI DUNG QUY TRÌNH"];
+  let contentStart = 0;
+  for (const kw of CONTENT_START_KW) {
+    const idx = upper.indexOf(kw);
+    if (idx !== -1) { contentStart = idx; break; }
+  }
+
+  // ── Bước 1: Tìm vị trí keyword trong phạm vi nội dung thực ──
   const results = STRUCTURE.map(item => {
     let foundIdx = -1;
     let foundKw  = null;
+
+    // Mục trang bìa: tìm từ đầu file (trước contentStart)
+    const isCoverItem = item.group === "TRANG BÌA & THÔNG TIN KIỂM SOÁT";
+    const searchFrom  = isCoverItem ? 0 : contentStart;
+
     for (const kw of item.kw) {
-      const idx = upper.indexOf(kw);
+      const idx = upper.indexOf(kw, searchFrom);
       if (idx !== -1 && (foundIdx === -1 || idx < foundIdx)) {
         foundIdx = idx;
         foundKw  = kw;
       }
     }
-    if (foundIdx === -1) return { ...item, status:"missing", pos:-1 };
-    // Kiểm tra có nội dung thực sau keyword không
+
+    if (foundIdx === -1) return { ...item, status:"missing", pos:-1, count:0 };
     const snippet = upper.slice(foundIdx + foundKw.length, foundIdx + foundKw.length + 150).trim();
     const status  = snippet.length > 5 ? "ok" : "empty";
-    return { ...item, status, pos: foundIdx };
+
+    // Đếm số lần xuất hiện của keyword chính trong toàn bộ nội dung (từ searchFrom)
+    let count = 0;
+    let scanPos = searchFrom;
+    while (true) {
+      const idx = upper.indexOf(foundKw, scanPos);
+      if (idx === -1) break;
+      count++;
+      scanPos = idx + foundKw.length;
+    }
+
+    return { ...item, status, pos: foundIdx, count };
   });
 
-  // Bước 2: Kiểm tra thứ tự — mục có nội dung phải xuất hiện KHÔNG TRƯỚC mục trước nó
-  let lastPos = -1;
+  // ── Bước 2: Kiểm tra thứ tự — chỉ so sánh trong cùng nhóm liên tiếp ──
+  // Reset lastPos khi chuyển nhóm để tránh so sánh xuyên nhóm
+  let lastPos   = -1;
+  let lastGroup = "";
   for (let i = 0; i < results.length; i++) {
-    if (results[i].status === "missing") { lastPos = -1; continue; }
-    if (lastPos !== -1 && results[i].pos < lastPos) {
-      results[i].status = "wrong_order"; // Xuất hiện trước mục trước đó
+    const r = results[i];
+    if (r.status === "missing") { lastPos = -1; continue; }
+    if (r.group !== lastGroup) { lastPos = -1; lastGroup = r.group; }
+    if (lastPos !== -1 && r.pos < lastPos) {
+      results[i].status = "wrong_order";
     } else {
-      lastPos = results[i].pos;
+      lastPos = r.pos;
     }
   }
 
@@ -843,7 +875,7 @@ function renderResults(structRes, aiRes, content62) {
 
   // ── TẦNG 1: Cấu trúc ──
   html += `<div class="section-label">TẦNG 1 — Cấu trúc 25 mục bắt buộc</div>`;
-  html += `<table class="check-table"><thead><tr><th>#</th><th>Mục cấu trúc</th><th>Nhóm</th><th>Trạng thái</th></tr></thead><tbody>`;
+  html += `<table class="check-table"><thead><tr><th>#</th><th>Mục cấu trúc</th><th>Nhóm</th><th>Trạng thái</th><th>Ghi chú</th></tr></thead><tbody>`;
   reportText += "TẦNG 1 — CẤU TRÚC 25 MỤC\n"+"-".repeat(40)+"\n";
   let lastGroup = "";
   structRes.forEach((r,i) => {
@@ -856,8 +888,21 @@ function renderResults(structRes, aiRes, content62) {
           : `<span class="badge mis">❌ THIẾU</span>`;
     const statusLabel = r.status==="ok"?"ĐỦ":r.status==="empty"?"TRỐNG":r.status==="wrong_order"?"SAI THỨ TỰ":"THIẾU";
     const grp = r.group !== lastGroup ? r.group : ""; lastGroup = r.group;
-    html += `<tr><td style="color:var(--ink-2);font-size:11px">${i+1}</td><td>${r.label}</td><td style="font-size:11px;color:var(--ink-2)">${grp}</td><td>${badge}</td></tr>`;
-    reportText += `  [${statusLabel}] ${r.label}\n`;
+
+    // Ghi chú: chỉ hiển thị khi mục xuất hiện nhiều hơn 1 lần
+    const noteHtml = (r.count > 1)
+      ? `<span style="color:#7A4A00;font-size:11px;font-weight:600">⚠️ Xuất hiện ${r.count} lần trong tài liệu</span>`
+      : ``;
+    const noteText = (r.count > 1) ? `Xuất hiện ${r.count} lần` : "";
+
+    html += `<tr>
+      <td style="color:var(--ink-2);font-size:11px">${i+1}</td>
+      <td>${r.label}</td>
+      <td style="font-size:11px;color:var(--ink-2)">${grp}</td>
+      <td>${badge}</td>
+      <td>${noteHtml}</td>
+    </tr>`;
+    reportText += `  [${statusLabel}]${noteText ? ` [${noteText}]` : ""} ${r.label}\n`;
   });
   html += "</tbody></table>";
 
