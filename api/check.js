@@ -16,7 +16,22 @@ function maskPII(t) {
     .replace(/(^|[^\d])(\d{9,19})(?!\d)/g, "$1[SỐ ĐỊNH DANH]");
 }
 
+// Giới hạn độ dài prompt (ký tự) — chặn gửi khối lượng lớn bất thường qua endpoint này.
+const MAX_PROMPT_CHARS = 300000;
+
+// Thông báo lỗi chung cho client; chi tiết thật chỉ ghi vào log của Vercel.
+function clientMessage(status) {
+  if (status === 400) return "Gemini từ chối yêu cầu (HTTP 400). Có thể nội dung quá dài hoặc không hợp lệ.";
+  if (status === 401 || status === 403) return "Khóa AI của hệ thống không hợp lệ hoặc không có quyền. Báo quản trị viên.";
+  if (status === 404) return "Mô hình AI không khả dụng. Chọn mô hình khác.";
+  if (status === 429) return "Hệ thống đang quá tải hoặc hết hạn mức (HTTP 429).";
+  if (status === 503) return "Hệ thống AI đang quá tải (HTTP 503).";
+  return `Gemini trả lỗi (HTTP ${status}).`;
+}
+
 export default async function handler(req, res) {
+  res.setHeader("Cache-Control", "no-store");
+
   // Chỉ cho phép POST
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -24,8 +39,9 @@ export default async function handler(req, res) {
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
+    console.error("check: thiếu biến môi trường GEMINI_API_KEY");
     return res.status(500).json({
-      error: "Server chưa cấu hình GEMINI_API_KEY. Liên hệ quản trị viên."
+      error: "Hệ thống chưa được cấu hình khóa AI. Liên hệ quản trị viên."
     });
   }
 
@@ -33,17 +49,23 @@ export default async function handler(req, res) {
   if (!prompt || typeof prompt !== "string") {
     return res.status(400).json({ error: "Thiếu nội dung prompt" });
   }
+  if (prompt.length > MAX_PROMPT_CHARS) {
+    return res.status(413).json({
+      error: `Nội dung quá dài (${prompt.length} ký tự, tối đa ${MAX_PROMPT_CHARS}).`
+    });
+  }
 
   // Whitelist model được phép gọi — tránh client tự ý gọi model đắt tiền không kiểm soát
   const ALLOWED_MODELS = ["gemini-2.5-flash-lite", "gemini-2.5-flash", "gemini-2.5-pro"];
   const selectedModel = ALLOWED_MODELS.includes(model) ? model : "gemini-2.5-flash-lite";
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent?key=${apiKey}`;
+  // Khóa đi qua header, không nằm trong URL
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${selectedModel}:generateContent`;
 
   try {
     const upstream = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
       body: JSON.stringify({
         contents: [{ parts: [{ text: maskPII(prompt) }] }],
         generationConfig: {
@@ -54,14 +76,23 @@ export default async function handler(req, res) {
       signal: AbortSignal.timeout(110000)
     });
 
-    const data = await upstream.json();
+    let data = null;
+    try { data = await upstream.json(); } catch { data = null; }
 
-    // Forward y nguyên status code + body để frontend tự xử lý retry/429/503
-    return res.status(upstream.status).json(data);
+    if (!upstream.ok) {
+      // Giữ nguyên status code để frontend retry 429/503; không trả nguyên văn lỗi của Google
+      console.error("check: Gemini trả lỗi", upstream.status, String(data?.error?.message || "").split(apiKey).join("[KEY]"));
+      return res.status(upstream.status).json({
+        error: { message: clientMessage(upstream.status) }
+      });
+    }
+
+    return res.status(200).json(data || {});
 
   } catch (e) {
+    console.error("check: lỗi gọi Gemini", String((e && e.message) || "").split(apiKey).join("[KEY]"));
     return res.status(502).json({
-      error: { message: `Lỗi gọi Gemini từ server: ${e.message}` }
+      error: { message: "Không kết nối được tới Gemini từ server. Thử lại sau." }
     });
   }
 }

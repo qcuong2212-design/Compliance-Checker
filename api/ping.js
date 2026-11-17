@@ -10,8 +10,8 @@ export default async function handler(req, res) {
 
   try {
     const r = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models?pageSize=1&key=${key}`,
-      { signal: AbortSignal.timeout(8000) }
+      "https://generativelanguage.googleapis.com/v1beta/models?pageSize=1",
+      { headers: { "x-goog-api-key": key }, signal: AbortSignal.timeout(8000) }
     );
     if (r.status === 400 || r.status === 401 || r.status === 403) {
       return res.status(200).json({ ready: false, reason: "bad_key" });
