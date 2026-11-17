@@ -490,11 +490,16 @@ const AI_CHECKS = [
     id:"content_step_name", label:"I.1 — Tên bước: Động từ + Tân ngữ", short:"Tên bước (động từ + tân ngữ)", task:"I",
     prompt:`Chuyên gia thẩm định quy trình VTG.
 ${LANG_RULE}
-KIỂM TRA: Cột "Hoạt động" — mỗi tên bước PHẢI theo cấu trúc "Động từ hành chính + Tân ngữ cụ thể".
-Sai: thiếu động từ, tân ngữ mơ hồ, không đủ cấu trúc.
+KIỂM TRA: Cột "Hoạt động" — mỗi tên bước PHẢI có động từ và tân ngữ (động từ + tân ngữ).
+Chỉ báo SAI trong 2 trường hợp:
+- "Thiếu động từ": tên bước chỉ là danh từ/cụm danh từ, không có động từ (ví dụ "Hồ sơ đề nghị").
+- "Thiếu tân ngữ": tên bước chỉ có động từ, không nói tác động vào đối tượng nào (ví dụ "Phê duyệt").
+KHÔNG báo sai khi tên đã có động từ và tân ngữ, kể cả động từ thông dụng (Tìm, Kiểm tra, Lập, Ký, Gửi…). Mã bước ở đầu tên (B1., 1.2…) không phải một phần của tên.
+Phần Lỗi chỉ ghi đúng "Thiếu động từ" hoặc "Thiếu tân ngữ".
+Phần Sửa: giữ từ ngữ gốc, bổ sung phần còn thiếu dựa trên cột "Mô tả chi tiết" của chính bước đó. KHÔNG thêm động từ chung chung như "Thực hiện". Nếu không đủ căn cứ để biết tân ngữ, ghi Sửa: "[động từ] + [tân ngữ cần bổ sung]", không đoán.
 
 CHỈ liệt kê bước SAI. Mỗi lỗi 1 dòng:
-Bước [TT]: "[tên hiện tại]" → Lỗi: [ngắn gọn] → Sửa: "[tên đúng]"
+Bước [TT]: "[tên hiện tại]" → Lỗi: [Thiếu động từ hoặc Thiếu tân ngữ] → Sửa: "[tên đúng]"
 Không có lỗi → ghi: KHÔNG CÓ LỖI
 
 NỘI DUNG:
