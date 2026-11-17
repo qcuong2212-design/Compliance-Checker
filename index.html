@@ -197,6 +197,32 @@ tr.item[data-st=pending] td.stt{box-shadow:inset 3px 0 0 var(--line2);}
 .privacy details{margin-top:8px;}
 .privacy summary{cursor:pointer;color:var(--focus);font-weight:600;}
 .privacy textarea{width:100%;height:200px;margin-top:6px;padding:8px;border:1px solid var(--line2);border-radius:6px;background:var(--desk);color:var(--ink);font:12px/1.5 ui-monospace,Menlo,monospace;resize:vertical;}
+.hbtn{display:inline-flex;gap:6px;align-items:center;padding:5px 12px;border:1px solid var(--line2);border-radius:999px;background:var(--paper);color:var(--ink);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;}
+.hbtn:hover{background:var(--hover);}
+.kw{margin-top:8px;}
+.privacy .kw textarea{height:130px;background:var(--paper);}
+.kw-row{display:flex;gap:8px;align-items:center;margin-top:6px;flex-wrap:wrap;}
+.kw-row .btn{padding:5px 10px;font-size:12px;}
+.banner{margin:12px 24px 0;padding:9px 12px;border:1px solid var(--line2);border-left:3px solid var(--focus);border-radius:8px;background:var(--hover);font-size:12.5px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.banner[hidden]{display:none;}
+.banner .btn{margin-left:auto;padding:5px 10px;font-size:12px;}
+dialog.hist{margin:auto;border:1px solid var(--line2);border-radius:12px;background:var(--paper);color:var(--ink);padding:0;width:min(720px,calc(100vw - 24px));max-height:min(82vh,760px);box-shadow:0 12px 40px rgba(0,0,0,.25);}
+dialog.hist[open]{display:flex;flex-direction:column;}
+dialog.hist::backdrop{background:rgba(10,14,20,.5);}
+.hist-h{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line);}
+.hist-h h2{font-size:16px;font-weight:700;}
+.hist-h .btn{margin-left:auto;padding:5px 12px;}
+.hist-b{padding:4px 18px 8px;overflow:auto;flex:1;}
+.hi{padding:12px 0;border-bottom:1px solid var(--line);}
+.hi:last-child{border-bottom:0;}
+.hi .t{font-weight:600;word-break:break-word;}
+.hi .m{font-size:12px;color:var(--ink2);margin-top:2px;}
+.hi .c{font-size:12.5px;margin-top:6px;line-height:1.6;}
+.hi .a{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;}
+.hi .a .btn{padding:5px 10px;font-size:12px;}
+.hist-f{padding:10px 18px;border-top:1px solid var(--line);font-size:12px;color:var(--ink2);display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
+.hist-f p{flex:1;min-width:240px;}
+.hist-f .btn{padding:5px 10px;font-size:12px;}
 @media (min-width:1280px){.wrap{overflow:visible;}}
 @media (max-width:1279px){.form thead th{position:static;}}
 
@@ -227,6 +253,7 @@ tr.item[data-st=pending] td.stt{box-shadow:inset 3px 0 0 var(--line2);}
   <div class="pill" id="conn" role="status" aria-live="polite">
     <span class="dot busy" id="conn-dot"></span><span id="conn-text">Đang kết nối hệ thống…</span>
   </div>
+  <button class="hbtn" id="btn-hist" type="button" aria-haspopup="dialog">Lịch sử <span id="hist-n"></span></button>
 </header>
 
 <div class="shell">
@@ -258,7 +285,12 @@ tr.item[data-st=pending] td.stt{box-shadow:inset 3px 0 0 var(--line2);}
         <ul class="prog" id="prog"></ul>
         <div class="privacy" id="privacy">
           <b>Bảo vệ thông tin</b>
-          <p id="privacy-sum">Trước khi gửi AI, hệ thống tự ẩn email, số điện thoại, số định danh, mật khẩu và họ tên đi kèm nhãn.</p>
+          <p id="privacy-sum">Trước khi gửi AI, hệ thống tự ẩn email, số điện thoại, số định danh, mật khẩu, họ tên đi kèm nhãn và các từ khóa trong danh sách bên dưới.</p>
+          <details class="kw" id="kw"><summary>Từ khóa cần ẩn (<span id="kw-n">0</span>)</summary>
+            <p>Mỗi dòng một từ khóa: tên công ty, đối tác, mã hợp đồng, tên dự án. Từ khóa được thay bằng [TỔ CHỨC]. Muốn đặt nhãn riêng, viết: từ khóa =&gt; nhãn. Mặc định chưa ẩn chữ viết tắt VTG, TCT và mã văn bản. Danh sách lưu trên trình duyệt này.</p>
+            <textarea id="kw-list" spellcheck="false" aria-label="Danh sách từ khóa cần ẩn"></textarea>
+            <div class="kw-row"><button class="btn" id="kw-reset" type="button">Khôi phục mặc định</button></div>
+          </details>
           <details id="privacy-view" hidden><summary>Xem văn bản gửi AI</summary><textarea id="privacy-text" readonly aria-label="Văn bản đã ẩn thông tin nhạy cảm gửi cho AI"></textarea></details>
         </div>
       </li>
@@ -287,12 +319,21 @@ tr.item[data-st=pending] td.stt{box-shadow:inset 3px 0 0 var(--line2);}
     </div>
 
     <div class="panel" id="p-cl">
+      <div class="banner" id="hist-banner" hidden><span id="hist-banner-t"></span><button class="btn" id="hist-back" type="button">Quay lại</button></div>
       <p class="legend" id="legend">Chưa có kết quả. Bảng bên dưới là toàn bộ nội dung cần kiểm tra; sau khi chạy, cột Đánh giá được điền tự động và có thể sửa tay.</p>
       <div class="wrap"><table class="form" id="form"></table></div>
     </div>
   </section>
 
 </div>
+<dialog class="hist" id="hist" aria-labelledby="hist-title">
+  <div class="hist-h"><h2 id="hist-title">Lịch sử kiểm tra</h2><button class="btn" id="hist-close" type="button">Đóng</button></div>
+  <div class="hist-b" id="hist-list"></div>
+  <div class="hist-f">
+    <p>Lịch sử chỉ lưu trong trình duyệt này, không gửi lên máy chủ. Chỉ lưu kết quả đã ẩn thông tin, không lưu nội dung văn bản. Giữ tối đa 30 lần gần nhất. Xóa dữ liệu trình duyệt thì mất lịch sử.</p>
+    <button class="btn" id="hist-clear" type="button">Xóa toàn bộ</button>
+  </div>
+</dialog>
 <div id="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -743,10 +784,33 @@ const NOT_NAME = /GIÁM ĐỐC|TRƯỞNG|PHÓ|PHÒNG|BAN\b|TỔNG|CHUYÊN VIÊN|
 const NAME_RE = /^\p{Lu}\p{Ll}+(?:\s+\p{Lu}\p{Ll}+){1,4}$/u;
 const isPersonName = v => { const t = v.trim(); return NAME_RE.test(t) && !NOT_NAME.test(t.toUpperCase()); };
 
-function redact(text) {
-  const counts = { email:0, bimat:0, lienket:0, ip:0, sdt:0, dinhdanh:0, hoten:0 };
+// Từ khóa do người dùng khai báo: mỗi dòng "từ khóa" hoặc "từ khóa => nhãn"
+function parseKw(raw) {
+  const out = [];
+  for (const line of String(raw || "").split(/\r?\n/)) {
+    const ln = line.trim(); if (!ln || ln.startsWith("#")) continue;
+    const i = ln.indexOf("=>");
+    const kw = (i >= 0 ? ln.slice(0, i) : ln).trim().normalize("NFC");
+    let lb = i >= 0 ? ln.slice(i + 2).trim() : "";
+    if (!kw) continue;
+    lb = lb ? (/^\[.*\]$/.test(lb) ? lb : "[" + lb + "]") : "[TỔ CHỨC]";
+    out.push({ kw, lb });
+  }
+  return out.sort((a, b) => b.kw.length - a.kw.length);
+}
+function kwRegex(kw) {
+  const body = kw.trim().split(/\s+/).map(w => w.replace(/[.*+?^${}()|[\]\\\/]/g, "\\$&")).join("\\s+");
+  const L = /^[\p{L}\p{N}]/u.test(kw.trim()) ? "(?<![\\p{L}\\p{N}])" : "";
+  const R = /[\p{L}\p{N}]$/u.test(kw.trim()) ? "(?![\\p{L}\\p{N}])" : "";
+  try { return new RegExp(L + body + R, "giu"); } catch { return new RegExp(body, "giu"); }
+}
+function redact(text, kwRaw) {
+  if (kwRaw === undefined) { const el = document.querySelector("#kw-list"); kwRaw = el ? el.value : ""; }
+  const counts = { tukhoa:0, email:0, bimat:0, lienket:0, ip:0, sdt:0, dinhdanh:0, hoten:0 };
   const bump = k => { counts[k]++; };
   let t = text;
+  for (const { kw, lb } of parseKw(kwRaw)) t = t.replace(kwRegex(kw), () => (bump("tukhoa"), lb));
+  t = t.replace(/(\[[^\]\n]{1,40}\])\s*\(\s*\1\s*\)/g, "$1");
   t = t.replace(/[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}/g, () => (bump("email"), "[EMAIL]"));
   t = t.replace(/((?:mật\s*khẩu|password|passwd|pwd|api[\s_-]?key|secret|token)\s*[:=]\s*)(\S+)/gi, (m, a) => (bump("bimat"), a + "[BÍ MẬT]"));
   t = t.replace(/\b(?:AIza[0-9A-Za-z_\-]{30,}|sk-[A-Za-z0-9_\-]{20,})\b/g, () => (bump("bimat"), "[BÍ MẬT]"));
@@ -756,14 +820,14 @@ function redact(text) {
   t = t.replace(/(^|[^\d])((?:\+?84|0)[\s.\-]?\d{2,3}[\s.\-]?\d{3}[\s.\-]?\d{3,4})(?!\d)/g, (m, a) => (bump("sdt"), a + "[SĐT]"));
   t = t.replace(/(^|[^\d])(\d{9,19})(?!\d)/g, (m, a) => (bump("dinhdanh"), a + "[SỐ ĐỊNH DANH]"));
   // Họ tên: chỉ che khi đi kèm nhãn hoặc danh xưng, tránh che nhầm chức danh/đơn vị
-  t = t.replace(/((?:Họ\s*(?:và\s*)?tên|Người\s+(?:soạn\s+thảo|kiểm\s+tra|thẩm\s+định|phê\s+duyệt|ký)|Ký\s*tên|Chữ\s*ký)\s*[:\-–]\s*)([^\n|;]{2,60})/gi,
+  t = t.replace(/((?:Họ\s*(?:và\s*)?tên|Người\s+(?:soạn\s+thảo|kiểm\s+tra|thẩm\s+định|phê\s+duyệt|ký)|Ký\s*tên|Chữ\s*ký)\s*[:\-–]\s*)([^\n|;,]{2,60})/gi,
     (m, a, v) => isPersonName(v) ? (bump("hoten"), a + "[HỌ TÊN]") : m);
   t = t.replace(/(^|[^\p{L}])((?:Ông|Bà|Anh|Chị)\s+)(\p{Lu}\p{Ll}+(?:\s+\p{Lu}\p{Ll}+){1,3})/gu,
     (m, p, a, v) => isPersonName(v) ? (bump("hoten"), p + a + "[HỌ TÊN]") : m);
   const total = Object.values(counts).reduce((x, y) => x + y, 0);
   return { text:t, counts, total };
 }
-const REDACT_LABEL = { email:"email", bimat:"mật khẩu/khóa", lienket:"liên kết", ip:"địa chỉ IP", sdt:"số điện thoại", dinhdanh:"số định danh/tài khoản", hoten:"họ tên" };
+const REDACT_LABEL = { tukhoa:"từ khóa tổ chức/đối tác", email:"email", bimat:"mật khẩu/khóa", lienket:"liên kết", ip:"địa chỉ IP", sdt:"số điện thoại", dinhdanh:"số định danh/tài khoản", hoten:"họ tên" };
 function redactSummary(counts) {
   const parts = Object.entries(counts).filter(([, n]) => n > 0).map(([k, n]) => `${n} ${REDACT_LABEL[k]}`);
   return parts.length ? parts.join(", ") : "";
@@ -1350,8 +1414,12 @@ function computeChecklist() {
   clRows = CL_ROWS.map(r => {
     if (r.kind === "sec") return r;
     let res, details = null;
-    if (!clRan || !ctx) res = { st:"idle", basis:"", note:"" };
-    else {
+    if (!clRan || (!ctx && !histSnap)) res = { st:"idle", basis:"", note:"" };
+    else if (histSnap) {
+      const x = histSnap.rows[r.key];
+      res = x ? x.a : { st:"review", basis:"", note:"Không có dữ liệu đã lưu." };
+      details = x ? x.d : null;
+    } else {
       const fn = EVAL_BY[r.form][lk(r)];
       res = fn ? fn(ctx) : { st:"review", basis:"Thủ công", note: MANUAL[r.key] || "Thẩm định thủ công." };
       const dfn = DETAILS_BY[r.form][lk(r)]; details = dfn ? dfn(ctx) : null;
@@ -1364,8 +1432,8 @@ function computeChecklist() {
   for (const r of clRows) if (r.kind === "item" && r.details && r.st === "fail" && !touched.has(r.key)) openSet.add(r.key);
 }
 
-function countRows(form) {
-  const items = clRows.filter(r => r.kind === "item" && (!form || r.form === form));
+function countRows(form, rows = clRows) {
+  const items = rows.filter(r => r.kind === "item" && (!form || r.form === form));
   return {
     all: items.length,
     pass: items.filter(r => r.st === "pass").length,
@@ -1469,7 +1537,7 @@ function renderTabs() {
 function updateHead() {
   const f = CL_FORMS.find(x => x.id === activeForm);
   $("#sh-title").textContent = f.title;
-  $("#sheet-sub").textContent = f.sub + (fileName && clRan ? ` Tài liệu: ${fileName}.` : "");
+  $("#sheet-sub").textContent = f.sub + (curMeta().file && clRan ? ` Tài liệu: ${curMeta().file}.` : "");
 }
 $("#tabs").addEventListener("click", e => {
   const b = e.target.closest(".tab"); if (!b || b.dataset.form === activeForm) return;
@@ -1490,7 +1558,7 @@ $("#form").addEventListener("click", e => {
     const key = v.closest("tr").dataset.key, val = v.dataset.v;
     const u = clUser[key] || (clUser[key] = {});
     if (u.st === val) delete u.st; else u.st = val;
-    refreshChecklist(); return;
+    refreshChecklist(); saveHistorySoon(); return;
   }
   const m = e.target.closest("button[data-more]");
   if (m) {
@@ -1509,6 +1577,7 @@ $("#form").addEventListener("input", e => {
   const n = e.target.closest(".note");
   if (!n) return;
   (clUser[n.dataset.key] || (clUser[n.dataset.key] = {})).note = n.textContent;
+  saveHistorySoon();
 });
 $("#form").addEventListener("focusout", e => {
   if (e.target.classList && e.target.classList.contains("note") && clDirty) { computeChecklist(); renderChecklist(); renderScore(); }
@@ -1537,6 +1606,7 @@ $("#btn-check").addEventListener("click", async () => {
     if (!(await checkConn())) { running = false; updateRun(); showToast("Chưa kết nối được hệ thống. Thử lại sau ít phút hoặc báo quản trị viên."); return; }
   }
   clRan = true; clUser = {}; clFilter = "all"; aiDone = []; struct = []; lastRunAt = new Date();
+  histSnap = null; curEntryId = null; $("#hist-banner").hidden = true;
   openSet.clear(); touched.clear(); srcOpen.clear();
   ctx = { text:fileContent, upper:fileContent.toUpperCase(), S:{}, ai:{} };
   $("#st3").classList.remove("done");
@@ -1592,7 +1662,8 @@ $("#btn-check").addEventListener("click", async () => {
     setStep(li, "active"); await sleep(150); setStep(li, "done");
     $("#st3").classList.add("done");
     running = false; renderScore();
-    showToast("Kiểm tra hoàn tất.");
+    curEntryId = "h" + Date.now(); saveHistory();
+    showToast("Kiểm tra hoàn tất. Kết quả đã lưu vào Lịch sử.");
   } catch (e) {
     showToast("Lỗi hệ thống: " + e.message);
   } finally {
@@ -1604,21 +1675,21 @@ $("#btn-check").addEventListener("click", async () => {
 // XUẤT FILE
 // ══════════════════════════════════════════════════════
 const STLABEL = { pass:"Đạt", fail:"Không đạt", review:"Cần thẩm định", pending:"Cần thẩm định", idle:"" };
-function baseName() { return fileName.replace(/\.[^.]+$/, "").replace(/[\\/:*?"<>|]+/g, "_"); }
+function safeName(n) { return String(n || "").replace(/\.[^.]+$/, "").replace(/[\\/:*?"<>|]+/g, "_"); }
 function download(blob, name) {
   const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
 }
 
-function buildReport() {
-  const when = (lastRunAt || new Date()).toLocaleString("vi-VN");
-  let t = `VTG — Báo cáo kiểm tra tuân thủ quy trình\nTài liệu: ${fileName}\nModel AI: ${selectedModel}\nThời điểm: ${when}\n`;
-  if (redactInfo) t += `Thông tin đã ẩn trước khi gửi AI: ${redactInfo.total ? redactSummary(redactInfo.counts) : "không có"}\n`;
+function buildReport(rows, meta) {
+  const when = new Date(meta.at || Date.now()).toLocaleString("vi-VN");
+  let t = `VTG — Báo cáo kiểm tra tuân thủ quy trình\nTài liệu: ${meta.file}\nModel AI: ${meta.model}\nThời điểm: ${when}\n`;
+  if (meta.red) t += `Thông tin đã ẩn trước khi gửi AI: ${meta.red.total ? meta.red.text : "không có"}\n`;
   t += `${"=".repeat(60)}\n\n`;
   for (const f of CL_FORMS) {
-    const c = countRows(f.id);
+    const c = countRows(f.id, rows);
     t += `${f.title}\nĐạt ${c.pass} | Không đạt ${c.fail} | Cần thẩm định ${c.wait} | Tổng ${c.all}\n${"-".repeat(40)}\n`;
-    for (const r of clRows.filter(x => x.form === f.id)) {
+    for (const r of rows.filter(x => x.form === f.id)) {
       if (r.kind === "sec") { t += `\n${r.sec}. ${r.title}\n`; continue; }
       t += `  ${r.n}. [${STLABEL[r.st] || "—"}] ${r.name}${r.edited ? " (sửa tay)" : ""}${r.note ? " — " + r.note.replace(/\s*\n\s*/g, " ") : ""}\n`;
       if (r.details) for (const l of r.details) t += `        ${l}\n`;
@@ -1627,11 +1698,11 @@ function buildReport() {
   }
   return t;
 }
-$("#btn-txt").addEventListener("click", () => {
-  if (!clRan) return;
-  download(new Blob([buildReport()], { type:"text/plain;charset=utf-8" }), `Bao_cao_tuan_thu_${baseName()}.txt`);
+function exportTxt(rows, meta) {
+  download(new Blob([buildReport(rows, meta)], { type:"text/plain;charset=utf-8" }), `Bao_cao_tuan_thu_${safeName(meta.file)}.txt`);
   showToast("Đã tải báo cáo .txt.");
-});
+}
+$("#btn-txt").addEventListener("click", () => { if (clRan) exportTxt(clRows, curMeta()); });
 
 function loadScript(src) {
   return new Promise((res, rej) => {
@@ -1640,29 +1711,29 @@ function loadScript(src) {
   });
 }
 
-$("#btn-xlsx").addEventListener("click", async () => {
-  if (!clRan) return;
-  const btn = $("#btn-xlsx"); btn.disabled = true; btn.textContent = "Đang tạo file…";
+async function exportXlsx(rows, meta, btn) {
+  const label = btn.textContent; btn.disabled = true; btn.textContent = "Đang tạo file…";
   try {
     if (!window.ExcelJS) {
       try { await loadScript("https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"); }
       catch { await loadScript("https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"); }
     }
-    const buf = await buildXlsx();
+    const buf = await buildXlsx(rows, meta);
     download(new Blob([buf], { type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
-             `Checklist_tham_dinh_${baseName()}.xlsx`);
+             `Checklist_tham_dinh_${safeName(meta.file)}.xlsx`);
     showToast("Đã tải checklist .xlsx.");
   } catch (e) {
     showToast("Không tạo được file Excel: " + e.message);
-  } finally { btn.disabled = false; btn.textContent = "Tải checklist (.xlsx)"; }
-});
+  } finally { btn.disabled = false; btn.textContent = label; }
+}
+$("#btn-xlsx").addEventListener("click", () => { if (clRan) exportXlsx(clRows, curMeta(), $("#btn-xlsx")); });
 
-async function buildXlsx() {
+async function buildXlsx(rows, meta) {
   const wb = new ExcelJS.Workbook(); wb.creator = "VTG Compliance Checker";
   const thin = { style:"thin", color:{ argb:"FFBFC7D3" } };
   const border = { top:thin, left:thin, bottom:thin, right:thin };
   const wrap = { wrapText:true, vertical:"top" };
-  const when = (lastRunAt || new Date()).toLocaleString("vi-VN");
+  const when = new Date(meta.at || Date.now()).toLocaleString("vi-VN");
 
   const fills = { pass:"FFE2F4EA", fail:"FFFDE7EA", review:"FFFFF1D6", pending:"FFFFF1D6" };
   const fonts = { pass:"FF0F7B4D", fail:"FFC4122F" };
@@ -1677,7 +1748,7 @@ async function buildXlsx() {
     ws.mergeCells("A2:F2"); ws.getCell("A2").value = f.sub;
     ws.getCell("A2").font = { italic:true, size:10 }; ws.getCell("A2").alignment = { horizontal:"center" };
     ws.mergeCells("A3:F3");
-    ws.getCell("A3").value = `Tài liệu: ${fileName}. Kiểm tra lúc ${when} bằng VTG Compliance Checker, model ${selectedModel}. Ô Đánh giá để trống (màu vàng) là dòng cần người thẩm định quyết định.`;
+    ws.getCell("A3").value = `Tài liệu: ${meta.file}. Kiểm tra lúc ${when} bằng VTG Compliance Checker, model ${meta.model}. Ô Đánh giá để trống (màu vàng) là dòng cần người thẩm định quyết định.`;
     ws.getCell("A3").font = { italic:true, size:10, color:{ argb:"FF566174" } };
     const hr = ws.getRow(4);
     ["STT","Nội dung","Nguồn thông tin/tiêu chuẩn","Tính chất","Đánh giá (Đạt/Không đạt)","Ghi chú"].forEach((h, i) => {
@@ -1686,7 +1757,7 @@ async function buildXlsx() {
       c.fill = { type:"pattern", pattern:"solid", fgColor:{ argb:"FFF8D7B5" } }; c.border = border;
     });
     hr.height = 32;
-    for (const r of clRows.filter(x => x.form === f.id)) {
+    for (const r of rows.filter(x => x.form === f.id)) {
       const row = ws.addRow(r.kind === "sec"
         ? [r.sec, r.title, "", "", "", ""]
         : [r.n, r.name, r.src, r.type, r.st === "pass" || r.st === "fail" ? STLABEL[r.st] : "", [r.note, r.hint].filter(Boolean).join("\n")]);
@@ -1703,7 +1774,7 @@ async function buildXlsx() {
     }
   }
 
-  const withDetails = clRows.filter(r => r.kind === "item" && r.details);
+  const withDetails = rows.filter(r => r.kind === "item" && r.details);
   if (withDetails.length) {
     const w2 = wb.addWorksheet("Chi tiết");
     w2.columns = [{width:12},{width:38},{width:34},{width:120}];
@@ -1715,9 +1786,141 @@ async function buildXlsx() {
 }
 
 // ══════════════════════════════════════════════════════
+// TỪ KHÓA CẦN ẨN + LỊCH SỬ KIỂM TRA (lưu trong trình duyệt này)
+// ══════════════════════════════════════════════════════
+const KW_KEY = "vtg_cc_keywords_v1", HIST_KEY = "vtg_cc_history_v1", HIST_MAX = 30;
+const KW_DEFAULT = [
+  "Tổng công ty CP Đầu tư Quốc tế Viettel (TCT VTG)",
+  "Tổng công ty Cổ phần Đầu tư Quốc tế Viettel (TCT VTG)",
+  "Tổng công ty CP Đầu tư Quốc tế Viettel",
+  "Tổng công ty Cổ phần Đầu tư Quốc tế Viettel",
+  "Viettel Global Investment Joint Stock Company",
+  "Viettel Global",
+  "(TCT VTG)"
+].join("\n");
+function lsGet(k) { try { return localStorage.getItem(k); } catch { return null; } }
+function lsSet(k, v) { try { localStorage.setItem(k, v); return true; } catch { return false; } }
+
+(function initKw() {
+  const ta = $("#kw-list"), saved = lsGet(KW_KEY);
+  ta.value = saved !== null ? saved : KW_DEFAULT;
+  const upd = () => { $("#kw-n").textContent = parseKw(ta.value).length; };
+  upd();
+  let tm;
+  ta.addEventListener("input", () => { upd(); clearTimeout(tm); tm = setTimeout(() => lsSet(KW_KEY, ta.value), 300); });
+  $("#kw-reset").addEventListener("click", () => { ta.value = KW_DEFAULT; upd(); lsSet(KW_KEY, KW_DEFAULT); showToast("Đã khôi phục danh sách mặc định."); });
+})();
+
+let histSnap = null, curEntryId = null;
+function curMeta() {
+  if (histSnap) return histSnap.meta;
+  return { file:fileName, at:lastRunAt || new Date(), model:selectedModel,
+           red: redactInfo ? { total:redactInfo.total, text:redactSummary(redactInfo.counts) } : null };
+}
+function rowsFromSnap(snapRows, userMap) {
+  return CL_ROWS.map(r => {
+    if (r.kind === "sec") return r;
+    const x = snapRows[r.key] || { a:{ st:"review", basis:"", note:"Không có dữ liệu đã lưu." }, d:null };
+    const u = userMap[r.key] || {};
+    return { ...r, hint:r.note, auto:x.a, details:x.d, dtitle:DETAIL_TITLE[r.key] || "Chi tiết từ AI",
+             st:u.st || x.a.st, edited:!!u.st, note:u.note !== undefined ? u.note : x.a.note };
+  });
+}
+function histLoad() {
+  try { const a = JSON.parse(lsGet(HIST_KEY) || "[]"); return Array.isArray(a) ? a : []; } catch { return []; }
+}
+function histStore(arr) {
+  let a = arr.slice(0, HIST_MAX);
+  while (a.length) { if (lsSet(HIST_KEY, JSON.stringify(a))) return true; a = a.slice(0, -1); }
+  return lsSet(HIST_KEY, "[]") && false;
+}
+function updateHistBtn() { const n = histLoad().length; $("#hist-n").textContent = n ? "(" + n + ")" : ""; }
+// Mọi chuỗi lưu vào lịch sử đều đi qua bộ ẩn thông tin (kể cả từ khóa)
+const mk = s => redact(String(s ?? "")).text;
+function buildEntry(id) {
+  const rows = {};
+  for (const r of clRows) if (r.kind === "item")
+    rows[r.key] = { a:{ st:r.auto.st, basis:r.auto.basis || "", note:mk(r.auto.note) }, d: r.details ? r.details.map(mk) : null };
+  const user = {};
+  for (const [k, u] of Object.entries(clUser)) {
+    const o = {}; if (u.st) o.st = u.st; if (u.note !== undefined) o.note = mk(u.note);
+    if (Object.keys(o).length) user[k] = o;
+  }
+  const m = curMeta(), cnt = {};
+  for (const f of CL_FORMS) cnt[f.id] = countRows(f.id);
+  return { id, at:new Date(m.at || Date.now()).toISOString(), file:m.file, model:m.model, red:m.red, cnt, snap:{ rows, user } };
+}
+function saveHistory() {
+  if (!clRan || running || !curEntryId) return;
+  const e = buildEntry(curEntryId), all = histLoad(), i = all.findIndex(x => x.id === e.id);
+  if (i >= 0) all[i] = e; else all.unshift(e);
+  if (!histStore(all)) showToast("Không lưu được lịch sử (trình duyệt chặn lưu trữ hoặc đã đầy).");
+  updateHistBtn(); if ($("#hist").open) renderHist();
+}
+let histTm;
+function saveHistorySoon() { clearTimeout(histTm); histTm = setTimeout(saveHistory, 700); }
+
+const fmtAt = iso => new Date(iso).toLocaleString("vi-VN");
+function renderHist() {
+  const a = histLoad();
+  $("#hist-list").innerHTML = a.length ? a.map(e => {
+    const c = CL_FORMS.map(f => { const k = e.cnt && e.cnt[f.id]; return k ? `${f.tab.split(":")[0]}: ${k.pass} đạt · ${k.fail} không đạt · ${k.wait} cần thẩm định` : ""; }).filter(Boolean).join("<br>");
+    return `<div class="hi" data-id="${esc(e.id)}"><div class="t">${esc(e.file)}</div>
+      <div class="m">${esc(fmtAt(e.at))} · ${esc(e.model)}${e.red && e.red.total ? " · đã ẩn " + e.red.total + " mục" : ""}</div>
+      <div class="c">${c}</div>
+      <div class="a"><button class="btn" type="button" data-a="view">Xem lại</button><button class="btn" type="button" data-a="xlsx">Tải .xlsx</button><button class="btn" type="button" data-a="txt">Tải .txt</button><button class="btn" type="button" data-a="del">Xóa</button></div></div>`;
+  }).join("") : `<p class="empty">Chưa có lần kiểm tra nào. Kết quả tự được lưu sau mỗi lần kiểm tra.</p>`;
+}
+function entryRowsMeta(e) {
+  return { rows: rowsFromSnap(e.snap.rows, e.snap.user || {}), meta: { file:e.file, at:new Date(e.at), model:e.model, red:e.red } };
+}
+function viewEntry(id) {
+  if (running) { showToast("Đang chạy kiểm tra. Xem lại lịch sử sau khi hoàn tất."); return; }
+  const e = histLoad().find(x => x.id === id); if (!e) return;
+  histSnap = { rows:e.snap.rows, meta:entryRowsMeta(e).meta };
+  clUser = JSON.parse(JSON.stringify(e.snap.user || {})); curEntryId = e.id;
+  clRan = true; ctx = null; clFilter = "all";
+  openSet.clear(); touched.clear(); srcOpen.clear();
+  $("#hist-banner-t").textContent = `Đang xem kết quả đã lưu: ${e.file}, ${fmtAt(e.at)}. Sửa tay ở đây sẽ được lưu lại.`;
+  $("#hist-banner").hidden = false;
+  $("#btn-xlsx").disabled = false; $("#btn-txt").disabled = false;
+  refreshChecklist(); updateHead(); setLegend(); renderScore();
+  $("#hist").close(); $("#score").scrollIntoView({ behavior:"smooth", block:"start" });
+}
+$("#hist-back").addEventListener("click", () => {
+  histSnap = null; curEntryId = null; clRan = false; ctx = null; clUser = {}; clFilter = "all";
+  $("#hist-banner").hidden = true; $("#btn-xlsx").disabled = true; $("#btn-txt").disabled = true;
+  refreshChecklist(); updateHead(); setLegend(); renderScore();
+});
+function arm(btn, doIt, armedText) {
+  if (btn.dataset.armed) { clearTimeout(+btn.dataset.armed); delete btn.dataset.armed; btn.textContent = btn.dataset.label; doIt(); return; }
+  btn.dataset.label = btn.textContent; btn.textContent = armedText;
+  btn.dataset.armed = setTimeout(() => { delete btn.dataset.armed; btn.textContent = btn.dataset.label; }, 3500);
+}
+$("#hist-list").addEventListener("click", e => {
+  const b = e.target.closest("button[data-a]"); if (!b) return;
+  const id = b.closest(".hi").dataset.id, act = b.dataset.a;
+  const ent = histLoad().find(x => x.id === id); if (!ent) return;
+  if (act === "view") viewEntry(id);
+  else if (act === "txt") { const { rows, meta } = entryRowsMeta(ent); exportTxt(rows, meta); }
+  else if (act === "xlsx") { const { rows, meta } = entryRowsMeta(ent); exportXlsx(rows, meta, b); }
+  else if (act === "del") arm(b, () => {
+    histStore(histLoad().filter(x => x.id !== id));
+    if (curEntryId === id) curEntryId = null;
+    updateHistBtn(); renderHist();
+  }, "Bấm lại để xóa");
+});
+$("#hist-clear").addEventListener("click", e => arm(e.currentTarget, () => {
+  lsSet(HIST_KEY, "[]"); curEntryId = null; updateHistBtn(); renderHist();
+}, "Bấm lại để xóa hết"));
+$("#btn-hist").addEventListener("click", () => { renderHist(); $("#hist").showModal(); });
+$("#hist-close").addEventListener("click", () => $("#hist").close());
+$("#hist").addEventListener("click", e => { if (e.target === e.currentTarget) e.currentTarget.close(); });
+
+// ══════════════════════════════════════════════════════
 // KHỞI ĐỘNG
 // ══════════════════════════════════════════════════════
-computeChecklist(); updateHead(); renderChecklist(); setLegend(); renderTabs(); updateRun();
+computeChecklist(); updateHead(); renderChecklist(); setLegend(); renderTabs(); updateRun(); updateHistBtn();
 checkConn();
 </script>
 </body>
