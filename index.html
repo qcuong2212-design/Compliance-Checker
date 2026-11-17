@@ -479,7 +479,7 @@ const STRUCTURE = [
    kw:["PHỤ LỤC ĐÍNH KÈM","TÊN PHỤ LỤC"]},
 ];
 
-const LANG_RULE = `\n⚠️ BẮT BUỘC:\n- Toàn bộ câu trả lời PHẢI viết bằng tiếng Việt. KHÔNG dùng tiếng Anh.\n- KHÔNG viết lời chào, lời mở đầu, lời kết. Đi thẳng vào nội dung phân tích.\n- KHÔNG tóm tắt lại nhiệm vụ. Chỉ trả lời kết quả phân tích.\n`;
+const LANG_RULE = `\n⚠️ BẮT BUỘC:\n- Toàn bộ câu trả lời PHẢI viết bằng tiếng Việt. KHÔNG dùng tiếng Anh.\n- KHÔNG viết lời chào, lời mở đầu, lời kết. Đi thẳng vào nội dung phân tích.\n- KHÔNG tóm tắt lại nhiệm vụ. Chỉ trả lời kết quả phân tích.\n- NGẮN GỌN: mỗi mục tối đa 1 dòng, không quá 30 từ. Không giải thích dài, không lặp lại một ý.\n- Cùng một loại lỗi thì dùng đúng cùng một cụm từ (tối đa 6 từ) cho phần Lỗi/Thiếu ở mọi dòng.\n`;
 
 // ══════════════════════════════════════════════════════
 // TẦNG 2 — CÁC TÁC VỤ AI (chỉ phục vụ các dòng của checklist)
@@ -848,7 +848,28 @@ function aiLines(c, id) {
   const r = c.ai[id];
   if (!r) return null;
   const lines = r.split("\n").map(s => s.trim()).filter(s => /^Bước\s*\d+/i.test(s) || /CẢNH BÁO/.test(s));
-  return lines.length ? lines : null;
+  return lines.length ? compactLines(lines) : null;
+}
+// Gộp các dòng cùng một loại lỗi: ghi lỗi một lần ở dòng tiêu đề (▸), mỗi bước chỉ còn tên và cách sửa.
+// Loại lỗi chỉ có một bước thì giữ nguyên dòng gốc. Dòng không đúng cấu trúc được giữ nguyên.
+function compactLines(lines) {
+  const re = /^Bước\s*(\d+)\s*[:.]?\s*(.*?)\s*→\s*(Lỗi|Thiếu)\s*:\s*(.*?)\s*→\s*(Sửa|Cần)\s*:\s*(.*)$/i;
+  const groups = new Map(), rest = [];
+  for (const l of lines) {
+    const m = l.match(re);
+    if (!m) { rest.push(l); continue; }
+    const label = m[4].replace(/[.\s]+$/, "");
+    const key = m[3].toLowerCase() + "|" + label.toLowerCase();
+    if (!groups.has(key)) groups.set(key, { kind:m[3], label, items:[] });
+    groups.get(key).items.push({ raw:l, short:`Bước ${m[1]}: ${m[2]} → ${m[5]}: ${m[6]}` });
+  }
+  const out = [];
+  for (const g of groups.values()) {
+    if (g.items.length === 1) { out.push(g.items[0].raw); continue; }
+    out.push(`▸ ${g.kind}: ${g.label} (${g.items.length} bước)`);
+    for (const it of g.items) out.push(it.short);
+  }
+  return out.concat(rest);
 }
 function riskKpiPart(c, which) {
   const r = c.ai.risk_kpi;
@@ -1565,7 +1586,7 @@ function verdictHtml(r) {
 function detailHtml(lines, title) {
   return `<div class="dt"><b class="h">${esc(title)}</b>` + lines.map(raw => {
     let l = esc(raw.replace(/^[*\-•]\s+/, "• "));
-    if (/^(A|B)\.\s/.test(l) || /^Bổ sung/i.test(l)) return `<div class="sub">${l}</div>`;
+    if (/^(A|B)\.\s/.test(l) || /^Bổ sung/i.test(l) || /^▸/.test(l)) return `<div class="sub">${l}</div>`;
     l = l.replace(/(Lỗi|Thiếu|Cần|Sửa):/g, '<span class="lb">$1:</span>').replace(/→/g, '<span class="ar">→</span>');
     return `<div>${l}</div>`;
   }).join("") + `</div>`;
@@ -1598,7 +1619,7 @@ function renderChecklist() {
       <td class="type${r.type === "Tùy chọn" ? " opt" : ""}">${esc(r.type)}</td>
       <td class="ev">${verdictHtml(r)}</td>
       <td><div class="note" contenteditable="${r.st === "idle" ? "false" : "true"}" spellcheck="false" data-key="${r.key}">${esc(r.note)}</div>${r.hint ? `<span class="hintnote">${esc(r.hint)}</span>` : ""}${
-        r.details ? `<button class="more" type="button" data-more="${r.key}" aria-expanded="${isOpen}">Chi tiết (${r.details.length}) ${isOpen ? "▴" : "▾"}</button>` : ""}</td>
+        r.details ? `<button class="more" type="button" data-more="${r.key}" aria-expanded="${isOpen}">Chi tiết (${r.details.filter(l => !/^▸/.test(l)).length}) ${isOpen ? "▴" : "▾"}</button>` : ""}</td>
     </tr>`;
     if (r.details && isOpen) html += `<tr class="detail"><td></td><td colspan="5">${detailHtml(r.details, r.dtitle)}</td></tr>`;
   });
