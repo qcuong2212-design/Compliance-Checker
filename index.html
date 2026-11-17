@@ -223,6 +223,10 @@ dialog.hist::backdrop{background:rgba(10,14,20,.5);}
 .hist-f{padding:10px 18px;border-top:1px solid var(--line);font-size:12px;color:var(--ink2);display:flex;gap:12px;align-items:center;flex-wrap:wrap;}
 .hist-f p{flex:1;min-width:240px;}
 .hist-f .btn{padding:5px 10px;font-size:12px;}
+.drop.mini{margin-top:10px;padding:11px 14px;}
+.drop.mini.has{border-color:var(--pass-solid);}
+.drop.mini.warn{border-style:solid;border-color:#E0A100;text-align:left;}
+.mapclear{margin-top:4px;}
 @media (min-width:1280px){.wrap{overflow:visible;}}
 @media (max-width:1279px){.form thead th{position:static;}}
 
@@ -267,6 +271,12 @@ dialog.hist::backdrop{background:rgba(10,14,20,.5);}
           <b id="drop-main">Kéo thả hoặc bấm để chọn</b>
           <span id="drop-sub">.docx hoặc .pdf, tối đa 20 MB</span>
         </div>
+        <div class="drop mini" id="map-drop">
+          <input type="file" id="map-input" accept=".xlsx,.xlsm" aria-label="Chọn file Bảng ánh xạ yêu cầu pháp luật">
+          <b id="map-main">Bảng ánh xạ yêu cầu pháp luật (không bắt buộc)</b>
+          <span id="map-sub">File .xlsx có sheet "Bang anh xa YC PL". Chỉ đọc trong trình duyệt, không gửi cho AI.</span>
+        </div>
+        <button class="lnk mapclear" id="map-clear" type="button" hidden>Bỏ file Bảng ánh xạ</button>
       </li>
       <li class="step" id="st2">
         <h2>Chọn model AI</h2>
@@ -1012,7 +1022,9 @@ const EVAL = {
 // ══════════════════════════════════════════════════════
 // BIỂU MẪU 3 — THẨM ĐỊNH PHÁP LÝ (quy tắc, không dùng AI)
 // ══════════════════════════════════════════════════════
-const LEGAL_RE = /(Luật|Nghị định|Thông tư|Nghị quyết|Pháp lệnh)\s+(?:số\s+)?[^\n;]{3,90}/gi;
+const LEGAL_RE = /(?<![\p{L}])(Luật|Nghị định|Thông tư|Nghị quyết|Pháp lệnh)\s+(?:số\s+)?[^\n;]{3,90}/giu;
+// Trong Bảng ánh xạ chỉ nhận dòng bắt đầu bằng tên loại văn bản (tránh nhầm tiêu đề cột như "Văn bản pháp luật")
+const TABLE_LEGAL_RE = /(?:^|\n)[ \t]*(Luật|Nghị định|Thông tư|Nghị quyết|Pháp lệnh)[ \t]+(?:số[ \t]+)?[^\n;]{3,90}/giu;
 
 function taiLieuText(c) {
   const r = c.S.nd_tailieu;
@@ -1020,15 +1032,41 @@ function taiLieuText(c) {
   const ends = ["nd_thuatngu","nd_ranhgioi"].map(id => c.S[id]).filter(x => x && x.pos > r.pos).map(x => x.pos);
   return c.text.slice(r.pos, ends.length ? Math.min(...ends) : r.pos + 4000);
 }
-function legalRefs(c) {
-  const t = taiLieuText(c);
-  if (t === null) return null;
+function refsFromText(t, re = LEGAL_RE) {
   const seen = new Set(), out = [];
-  for (const m of t.matchAll(LEGAL_RE)) {
+  for (const m of t.matchAll(re)) {
     const line = m[0].replace(/\s+/g, " ").trim().slice(0, 110);
     if (!seen.has(line.toLowerCase())) { seen.add(line.toLowerCase()); out.push(line); }
   }
   return out;
+}
+function legalRefs(c) {
+  const t = taiLieuText(c);
+  return t === null ? null : refsFromText(t);
+}
+
+// ── Bảng ánh xạ yêu cầu pháp luật (file .xlsx đính kèm, chỉ xử lý trong trình duyệt) ──
+const normVN = s => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[đĐ]/g, "D").toUpperCase();
+const SOHIEU = /\b\d{1,5}\/(?:\d{4}\/)?[A-Z][A-Z0-9\-]{1,15}\b/;
+// So khớp một dòng dẫn chiếu với văn bản: ưu tiên số hiệu, nếu không có số hiệu thì so theo 3 từ đầu của tên.
+function matchRef(ref, hayNorm) {
+  const n = normVN(ref), sh = n.match(SOHIEU);
+  if (sh) return { found:hayNorm.includes(sh[0]), by:"số hiệu " + sh[0] };
+  const key = n.replace(/[^A-Z0-9 ]/g, " ").split(/\s+/).filter(Boolean).slice(0, 3).join(" ");
+  return { found:key.length > 0 && hayNorm.replace(/[^A-Z0-9 ]/g, " ").replace(/\s+/g, " ").includes(key), by:"tên" };
+}
+function mapCompare(c) {
+  const m = c.map;
+  if (!m || !m.sheet) return null;
+  const refs = legalRefs(c);
+  if (refs === null) return { m, refs:null, rows:[], extra:[] };
+  const rows = refs.map(ref => ({ ref, ...matchRef(ref, m.norm) }));
+  const tl = normVN(taiLieuText(c));
+  const extra = refsFromText(m.raw, TABLE_LEGAL_RE).filter(r => !matchRef(r, tl).found);
+  return { m, refs, rows, extra };
+}
+function mapLead(m) {
+  return `Bảng ánh xạ (sheet "${m.sheet}") có ${m.rows} dòng có nội dung, kể cả dòng tiêu đề và hướng dẫn nếu có.`;
 }
 const VAGUE_RE = /(?:theo|đúng|tuân thủ|căn cứ|thực hiện)\s+(?:đúng\s+)?(?:các\s+)?quy định\s+(?:của\s+)?(?:pháp luật|nhà nước)/gi;
 function vagueRefs(c) {
@@ -1045,7 +1083,9 @@ const EVAL3 = {
     const refs = legalRefs(c);
     if (refs === null) return { st:"fail", basis:"Quy tắc", note:"Thiếu mục Tài liệu liên quan nên chưa có danh mục văn bản pháp luật." };
     const mapped = /ÁNH XẠ[^\n]{0,40}(PHÁP LUẬT|YC PL|YÊU CẦU)|BANG ANH XA/.test(c.upper);
-    const mapNote = mapped ? "" : " Văn bản chưa nhắc Bảng ánh xạ yêu cầu pháp luật.";
+    const mc = mapCompare(c);
+    const mapNote = (mapped ? "" : " Văn bản chưa nhắc Bảng ánh xạ yêu cầu pháp luật.") +
+      (mc && mc.extra.length ? ` Đối chiếu Bảng ánh xạ đính kèm: ${mc.extra.length} văn bản có trong bảng nhưng chưa thấy ở Tài liệu liên quan.` : "");
     return refs.length
       ? { st:"review", basis:"Quy tắc", note:`Tìm thấy ${refs.length} văn bản (Luật, Nghị định, Thông tư…) tại Tài liệu liên quan. Cần thẩm định đã đầy đủ chưa.${mapNote}` }
       : { st:"review", basis:"Quy tắc", note:`Tài liệu liên quan chưa thấy Luật, Nghị định, Thông tư… nào. Cần thẩm định quy trình có văn bản pháp luật chuyên ngành áp dụng hay không.${mapNote}` };
@@ -1056,9 +1096,25 @@ const EVAL3 = {
       ? { st:"review", basis:"Thủ công", note:`Cần tra cứu hiệu lực của ${refs.length} văn bản tại thời điểm thẩm định và các nội dung sửa đổi, bổ sung, thay thế.` }
       : { st:"review", basis:"Thủ công", note:"Cần tra cứu hiệu lực các văn bản pháp luật được dẫn chiếu. Công cụ không có cơ sở dữ liệu pháp luật." };
   },
-  "II.1": c => /ÁNH XẠ[^\n]{0,40}(PHÁP LUẬT|YC PL|YÊU CẦU)|BANG ANH XA/.test(c.upper)
-    ? { st:"review", basis:"Quy tắc", note:"Có nhắc Bảng ánh xạ yêu cầu pháp luật. Bảng là sheet riêng gửi kèm dự thảo nên công cụ không kiểm tra được mức bao quát." }
-    : { st:"review", basis:"Quy tắc", note:"Văn bản không nhắc Bảng ánh xạ yêu cầu pháp luật. Cần kiểm tra bảng có gửi kèm dự thảo không." },
+  "II.1": c => {
+    const m = c.map;
+    if (m && !m.sheet)
+      return { st:"review", basis:"Bảng đính kèm", note:`File ${m.file} không có sheet "Bang anh xa YC PL" (các sheet: ${m.sheets.join(", ") || "không có"}). Cần kiểm tra lại file đính kèm.` };
+    if (m && !m.rows)
+      return { st:"fail", basis:"Bảng đính kèm", note:`Sheet "${m.sheet}" không có nội dung.` };
+    if (m) {
+      const mc = mapCompare(c), lead = mapLead(m);
+      if (mc.refs === null) return { st:"review", basis:"Bảng đính kèm", note:lead + " Chưa đối chiếu được với mục I.1 vì thiếu mục Tài liệu liên quan." };
+      if (!mc.rows.length) return { st:"review", basis:"Bảng đính kèm", note:lead + " Tài liệu liên quan chưa thấy Luật, Nghị định, Thông tư… nên chưa có gì để đối chiếu." };
+      const miss = mc.rows.filter(r => !r.found);
+      return miss.length
+        ? { st:"review", basis:"Bảng đính kèm", note:`${lead} ${miss.length}/${mc.rows.length} văn bản ở Tài liệu liên quan chưa thấy trong bảng (so khớp theo số hiệu hoặc tên). Cần thẩm định.` }
+        : { st:"review", basis:"Bảng đính kèm", note:`${lead} Cả ${mc.rows.length}/${mc.rows.length} văn bản ở Tài liệu liên quan đều có trong bảng. Chưa kiểm tra đủ yêu cầu bắt buộc theo từng điều, khoản. Cần thẩm định.` };
+    }
+    return /ÁNH XẠ[^\n]{0,40}(PHÁP LUẬT|YC PL|YÊU CẦU)|BANG ANH XA/.test(c.upper)
+      ? { st:"review", basis:"Quy tắc", note:"Có nhắc Bảng ánh xạ yêu cầu pháp luật. Chưa đính kèm file Bảng ánh xạ vào công cụ nên không kiểm tra được mức bao quát." }
+      : { st:"review", basis:"Quy tắc", note:"Văn bản không nhắc Bảng ánh xạ yêu cầu pháp luật. Cần kiểm tra bảng có gửi kèm dự thảo không. Chưa đính kèm file Bảng ánh xạ vào công cụ." };
+  },
   "II.2": c => {
     const v = vagueRefs(c);
     if (v === null) return { st:"review", basis:"Quy tắc", note:"Không tìm thấy phần Thuyết minh để kiểm tra." };
@@ -1073,10 +1129,16 @@ const EVAL3 = {
   }
 };
 const DETAILS3 = {
+  "I.1": c => { const mc = mapCompare(c); return mc && mc.extra.length ? mc.extra.map(r => "Có trong Bảng ánh xạ, chưa thấy ở Tài liệu liên quan: " + r) : null; },
+  "II.1": c => {
+    const mc = mapCompare(c);
+    if (!mc || !mc.rows.length) return null;
+    return mc.rows.map(r => (r.found ? "Có trong bảng" : "Chưa thấy trong bảng") + " (so khớp theo " + r.by + "): " + r.ref);
+  },
   "I.2": c => { const r = legalRefs(c); return r && r.length ? r : null; },
   "II.2": c => { const v = vagueRefs(c); return v && v.length ? v : null; }
 };
-const DETAIL_TITLE = { "BM3.I.2":"Văn bản pháp luật cần tra cứu hiệu lực", "BM3.II.2":"Vị trí dẫn chiếu chung chung" };
+const DETAIL_TITLE = { "BM3.I.1":"Đối chiếu với Bảng ánh xạ đính kèm", "BM3.II.1":"Đối chiếu Tài liệu liên quan với Bảng ánh xạ", "BM3.I.2":"Văn bản pháp luật cần tra cứu hiệu lực", "BM3.II.2":"Vị trí dẫn chiếu chung chung" };
 const EVAL_BY = { BM3:EVAL3, BM4:EVAL };
 const DETAILS_BY = { BM3:DETAILS3, BM4:DETAILS };
 const lk = r => r.sec + "." + r.n;
@@ -1336,7 +1398,7 @@ let fileContent = "", fileName = "", fileSize = 0;
 let serverReady = false, running = false;
 let selectedModel = "gemini-2.5-flash-lite";
 let ctx = null, clRan = false, clRows = [], clUser = {}, clFilter = "all", activeForm = "BM3";
-let struct = [], aiDone = [], clDirty = false, lastRunAt = null, redactInfo = null, fileFlow = null;
+let struct = [], aiDone = [], clDirty = false, lastRunAt = null, redactInfo = null, fileFlow = null, mapTable = null;
 const openSet = new Set(), touched = new Set(), srcOpen = new Set();
 
 function showToast(msg) {
@@ -1643,7 +1705,7 @@ $("#btn-check").addEventListener("click", async () => {
   clRan = true; clUser = {}; clFilter = "all"; aiDone = []; struct = []; lastRunAt = new Date();
   histSnap = null; curEntryId = null; $("#hist-banner").hidden = true;
   openSet.clear(); touched.clear(); srcOpen.clear();
-  ctx = { text:fileContent, upper:fileContent.toUpperCase(), S:{}, ai:{}, flow:fileFlow };
+  ctx = { text:fileContent, upper:fileContent.toUpperCase(), S:{}, ai:{}, flow:fileFlow, map:mapTable };
   $("#st3").classList.remove("done");
   $("#btn-xlsx").disabled = true; $("#btn-txt").disabled = true;
 
@@ -1746,13 +1808,15 @@ function loadScript(src) {
   });
 }
 
+async function ensureExcel() {
+  if (window.ExcelJS) return;
+  try { await loadScript("https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"); }
+  catch { await loadScript("https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"); }
+}
 async function exportXlsx(rows, meta, btn) {
   const label = btn.textContent; btn.disabled = true; btn.textContent = "Đang tạo file…";
   try {
-    if (!window.ExcelJS) {
-      try { await loadScript("https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"); }
-      catch { await loadScript("https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"); }
-    }
+    await ensureExcel();
     const buf = await buildXlsx(rows, meta);
     download(new Blob([buf], { type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
              `Checklist_tham_dinh_${safeName(meta.file)}.xlsx`);
@@ -1951,6 +2015,68 @@ $("#hist-clear").addEventListener("click", e => arm(e.currentTarget, () => {
 $("#btn-hist").addEventListener("click", () => { renderHist(); $("#hist").showModal(); });
 $("#hist-close").addEventListener("click", () => $("#hist").close());
 $("#hist").addEventListener("click", e => { if (e.target === e.currentTarget) e.currentTarget.close(); });
+
+// ══════════════════════════════════════════════════════
+// FILE BẢNG ÁNH XẠ YÊU CẦU PHÁP LUẬT (tùy chọn, chỉ đọc trong trình duyệt)
+// ══════════════════════════════════════════════════════
+function cellText(v) {
+  if (v == null) return "";
+  if (v instanceof Date) return v.toISOString().slice(0, 10);
+  if (typeof v === "object") {
+    if (v.richText) return v.richText.map(x => x.text).join("").trim();
+    if ("result" in v) return cellText(v.result);
+    if ("text" in v) return cellText(v.text);
+    return "";
+  }
+  return String(v).trim();
+}
+async function readMapXlsx(f) {
+  await ensureExcel();
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.load(await f.arrayBuffer());
+  const sheets = wb.worksheets.map(w => w.name);
+  const isMap = w => /BANGANHXA/.test(normVN(w.name).replace(/[^A-Z0-9]/g, ""));
+  let ws = wb.worksheets.find(isMap), how = "tên sheet";
+  if (!ws && wb.worksheets.length === 1) { ws = wb.worksheets[0]; how = "file chỉ có một sheet"; }
+  if (!ws) return { file:f.name, sheet:null, sheets };
+  const rows = [];
+  ws.eachRow({ includeEmpty:false }, row => {
+    const cells = [];
+    row.eachCell({ includeEmpty:false }, c => { const t = cellText(c.value); if (t) cells.push(t); });
+    if (cells.length) rows.push(cells);
+  });
+  const raw = rows.map(r => r.join("\n")).join("\n");
+  return { file:f.name, sheet:ws.name, how, sheets, rows:rows.length, raw, norm:normVN(raw) };
+}
+function showMap() {
+  const d = $("#map-drop"), m = mapTable;
+  d.classList.toggle("has", !!m && !!m.sheet); d.classList.toggle("warn", !!m && !m.sheet);
+  $("#map-clear").hidden = !m;
+  if (!m) {
+    $("#map-main").textContent = "Bảng ánh xạ yêu cầu pháp luật (không bắt buộc)";
+    $("#map-sub").textContent = 'File .xlsx có sheet "Bang anh xa YC PL". Chỉ đọc trong trình duyệt, không gửi cho AI.';
+  } else {
+    $("#map-main").textContent = m.file;
+    $("#map-sub").textContent = m.sheet
+      ? `Sheet "${m.sheet}" (${m.how}): ${m.rows} dòng có nội dung. Chỉ đọc trong trình duyệt, không gửi cho AI.`
+      : `Không có sheet "Bang anh xa YC PL" (các sheet: ${m.sheets.join(", ") || "không có"}).`;
+  }
+}
+function applyMap() {
+  showMap();
+  if (clRan && ctx && !histSnap) { ctx.map = mapTable; refreshChecklist(); }
+}
+async function handleMap(f) {
+  if (!/\.(xlsx|xlsm)$/i.test(f.name)) { showToast("Chỉ hỗ trợ file Excel .xlsx hoặc .xlsm."); return; }
+  if (f.size > 10 * 1024 * 1024) { showToast("File Bảng ánh xạ vượt quá 10 MB."); return; }
+  $("#map-main").textContent = "Đang đọc file…"; $("#map-sub").textContent = f.name;
+  try { mapTable = await readMapXlsx(f); }
+  catch (e) { mapTable = null; showMap(); showToast("Không đọc được file Bảng ánh xạ: " + e.message); return; }
+  applyMap();
+  showToast(mapTable.sheet ? "Đã đính kèm Bảng ánh xạ." : "File không có sheet Bảng ánh xạ.");
+}
+$("#map-input").addEventListener("change", e => { const f = e.target.files[0]; if (f) handleMap(f); e.target.value = ""; });
+$("#map-clear").addEventListener("click", () => { mapTable = null; applyMap(); });
 
 // ══════════════════════════════════════════════════════
 // KHỞI ĐỘNG
