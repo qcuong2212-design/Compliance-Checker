@@ -2,6 +2,20 @@
 // Backend serverless function — giữ Gemini API key an toàn, không lộ ra client.
 // Frontend gọi POST /api/check, backend này forward sang Gemini và trả kết quả về.
 
+
+// Lớp che dự phòng phía server: dù trình duyệt đã che, server che thêm một lần
+// trước khi gửi sang Gemini (email, số điện thoại, số định danh dài, IP, mật khẩu/khóa).
+function maskPII(t) {
+  return t
+    .replace(/[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}/g, "[EMAIL]")
+    .replace(/((?:mật\s*khẩu|password|passwd|pwd|api[\s_-]?key|secret|token)\s*[:=]\s*)(\S+)/gi, "$1[BÍ MẬT]")
+    .replace(/\b(?:AIza[0-9A-Za-z_\-]{30,}|sk-[A-Za-z0-9_\-]{20,})\b/g, "[BÍ MẬT]")
+    .replace(/\b\d{1,3}(?:\.\d{1,3}){3}\b/g, "[IP]")
+    .replace(/(^|[^\d])(\d{10}-\d{3})(?!\d)/g, "$1[SỐ ĐỊNH DANH]")
+    .replace(/(^|[^\d])((?:\+?84|0)[\s.\-]?\d{2,3}[\s.\-]?\d{3}[\s.\-]?\d{3,4})(?!\d)/g, "$1[SĐT]")
+    .replace(/(^|[^\d])(\d{9,19})(?!\d)/g, "$1[SỐ ĐỊNH DANH]");
+}
+
 export default async function handler(req, res) {
   // Chỉ cho phép POST
   if (req.method !== "POST") {
@@ -31,7 +45,7 @@ export default async function handler(req, res) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
+        contents: [{ parts: [{ text: maskPII(prompt) }] }],
         generationConfig: {
           temperature: 0.1,
           maxOutputTokens: 6000

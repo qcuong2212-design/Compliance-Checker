@@ -3,217 +3,300 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VTG · Kiểm tra Tuân thủ Quy trình</title>
+<title>VTG · Kiểm tra tuân thủ quy trình</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
 <style>
-:root {
-  --red:#C0001A; --red-dim:#8a0013;
-  --ink:#1A1A1A; --ink-2:#4A4A4A;
-  --rule:#E2E2E2; --bg:#F7F7F5; --surface:#FFFFFF;
-  --pass:#1A6B3A; --pass-bg:#EAF6EE;
-  --warn:#7A4A00; --warn-bg:#FFF5E0;
-  --fail:#9B1000; --fail-bg:#FFF0EE;
-  --mono:'Courier New',monospace;
-  --sans:'Segoe UI',system-ui,sans-serif;
+:root{
+  --desk:#EDEFF3; --paper:#FFFFFF; --ink:#17202E; --ink2:#566174;
+  --line:#DCE1E8; --line2:#BFC7D3; --head:#F7DFC8; --hover:#F6F8FB;
+  --red:#E4002B; --red-ink:#B80022;
+  --pass:#0F7B4D; --pass-bg:#E2F4EA; --pass-solid:#0F7B4D;
+  --fail:#C4122F; --fail-bg:#FDE7EA; --fail-solid:#C4122F;
+  --wait:#8F5500; --wait-bg:#FFF1D6;
+  --focus:#1F5FD6;
+  --sans:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --desk:#0F131A; --paper:#171D27; --ink:#E7EBF1; --ink2:#9BA7B9;
+    --line:#283241; --line2:#3A4658; --head:#3B3023; --hover:#1D2531;
+    --red-ink:#FF5A74;
+    --pass:#4FD08F; --pass-bg:#10301F;
+    --fail:#FF7A8E; --fail-bg:#3A1620;
+    --wait:#F2B84B; --wait-bg:#38290D;
+    --focus:#7AA7FF;
+  }
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:var(--sans);font-size:14px;background:var(--bg);color:var(--ink);min-height:100vh;}
+html{-webkit-text-size-adjust:100%;}
+body{font-family:var(--sans);font-size:14px;line-height:1.5;background:var(--desk);color:var(--ink);min-height:100vh;}
+button{font-family:inherit;font-size:inherit;color:inherit;}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px;}
 
-/* HEADER */
-header{background:var(--red);color:#fff;padding:18px 32px;display:flex;align-items:center;gap:16px;border-bottom:3px solid var(--red-dim);position:sticky;top:0;z-index:100;}
-.logo-mark{width:40px;height:40px;background:#fff;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-header h1{font-size:17px;font-weight:700;letter-spacing:.3px;}
-header p{font-size:12px;opacity:.82;margin-top:2px;}
-.conn-badge{margin-left:auto;font-size:11px;padding:4px 10px;border-radius:20px;border:1.5px solid rgba(255,255,255,.4);display:flex;align-items:center;gap:6px;white-space:nowrap;}
-.dot{width:8px;height:8px;border-radius:50%;background:#aaa;}
-.dot.on{background:#5EE887;} .dot.off{background:#ff6b6b;}
+/* ───── Thanh trên cùng ───── */
+.bar{display:flex;align-items:center;gap:14px;padding:12px 28px;background:var(--paper);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:30;}
+.mark{width:34px;height:34px;border-radius:9px;background:var(--red);color:#fff;font-weight:700;font-size:17px;display:grid;place-items:center;flex-shrink:0;}
+.bar h1{font-size:15px;font-weight:600;letter-spacing:-.1px;}
+.bar p{font-size:12px;color:var(--ink2);}
+.pill{margin-left:auto;display:inline-flex;align-items:center;gap:8px;padding:5px 12px;border:1px solid var(--line2);border-radius:999px;font-size:12px;font-weight:500;white-space:nowrap;}
+.dot{width:8px;height:8px;border-radius:50%;background:#9AA4B2;}
+.dot.on{background:#1FB56F;} .dot.off{background:#E5384F;} .dot.busy{background:#E0A100;}
 
-/* LAYOUT */
-main{max-width:900px;margin:0 auto;padding:32px 24px 80px;display:flex;flex-direction:column;gap:24px;}
+/* ───── Bố cục ───── */
+.shell{display:grid;grid-template-columns:280px minmax(0,1fr);gap:24px;max-width:1560px;margin:0 auto;padding:24px 20px 90px;align-items:start;}
+.rail{position:sticky;top:76px;}
 
-/* CARD */
-.card{background:var(--surface);border:1px solid var(--rule);border-radius:8px;overflow:hidden;}
-.card-head{padding:14px 20px;border-bottom:1px solid var(--rule);display:flex;align-items:center;gap:10px;}
-.card-head .step-num{width:24px;height:24px;background:var(--red);color:#fff;border-radius:50%;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.card-head h2{font-size:14px;font-weight:600;}
-.card-body{padding:20px;}
+/* ───── 3 bước ───── */
+.steps{list-style:none;counter-reset:s;}
+.step{position:relative;padding:0 0 26px 42px;counter-increment:s;}
+.step:last-child{padding-bottom:0;}
+.step::before{content:counter(s);position:absolute;left:0;top:0;width:28px;height:28px;border-radius:50%;background:var(--paper);border:1.5px solid var(--line2);font-size:13px;font-weight:600;display:grid;place-items:center;color:var(--ink2);}
+.step::after{content:"";position:absolute;left:13.5px;top:34px;bottom:6px;width:1px;background:var(--line2);}
+.step:last-child::after{display:none;}
+.step.done::before{background:var(--pass-solid);border-color:var(--pass-solid);color:#fff;content:"✓";}
+.step h2{font-size:14px;font-weight:600;line-height:28px;margin-bottom:8px;}
 
-/* UPLOAD */
-#drop-zone{border:2px dashed var(--rule);border-radius:8px;padding:40px 20px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;position:relative;}
-#drop-zone:hover,#drop-zone.drag-over{border-color:var(--red);background:#FFF5F6;}
-#drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
-#drop-zone .icon{font-size:36px;margin-bottom:10px;display:block;}
-#drop-zone p{color:var(--ink-2);font-size:13px;}
-#drop-zone strong{color:var(--red);}
-#file-name{margin-top:12px;font-size:12px;color:var(--pass);font-weight:600;min-height:18px;}
+.drop{position:relative;border:1.5px dashed var(--line2);border-radius:10px;padding:18px 14px;text-align:center;background:var(--paper);transition:border-color .15s,background .15s;}
+.drop:hover,.drop.over{border-color:var(--red);background:var(--hover);}
+.drop input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.drop b{display:block;font-size:13px;font-weight:600;}
+.drop span{display:block;font-size:12px;color:var(--ink2);margin-top:2px;}
+.drop.has{border-style:solid;border-color:var(--pass-solid);text-align:left;}
+.drop.has b{word-break:break-word;}
 
-/* SETTINGS */
-.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-.settings-grid.col3{grid-template-columns:2fr 1fr 1fr;}
-label.field{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--ink-2);font-weight:600;}
-label.field input,label.field select{padding:8px 10px;border:1px solid var(--rule);border-radius:6px;font-size:13px;color:var(--ink);background:var(--bg);font-family:var(--mono);outline:none;transition:border-color .2s;}
-label.field input:focus,label.field select:focus{border-color:var(--red);}
-.key-wrap{position:relative;}
-.key-wrap input{padding-right:70px;width:100%;}
-.key-toggle{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--red);cursor:pointer;font-weight:700;background:none;border:none;padding:2px 4px;}
+.models{display:flex;flex-direction:column;gap:6px;}
+.model{display:flex;gap:10px;align-items:flex-start;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--paper);cursor:pointer;}
+.model:hover{border-color:var(--line2);}
+.model input{margin-top:4px;accent-color:var(--red);}
+.model:has(input:checked){border-color:var(--red);box-shadow:inset 0 0 0 1px var(--red);}
+.model b{display:block;font-size:13px;font-weight:600;}
+.model span{display:block;font-size:12px;color:var(--ink2);}
+.hint{font-size:12px;color:var(--ink2);margin-top:8px;}
 
-/* MODEL SELECTOR */
-.model-tabs{display:flex;gap:8px;margin-bottom:12px;}
-.model-tab{padding:6px 14px;border-radius:6px;border:1.5px solid var(--rule);font-size:12px;font-weight:700;cursor:pointer;background:var(--bg);color:var(--ink-2);transition:all .2s;}
-.model-tab.active{border-color:var(--red);background:#FFF0F2;color:var(--red);}
+.run{width:100%;padding:12px 14px;border:0;border-radius:9px;background:var(--red);color:#fff;font-weight:600;font-size:14px;cursor:pointer;}
+.run:hover:not(:disabled){background:var(--red-ink);}
+.run:disabled{background:var(--line);color:var(--ink2);cursor:not-allowed;}
+.why{font-size:12px;color:var(--ink2);margin-top:8px;min-height:18px;}
 
-/* BUTTON */
-#btn-check{width:100%;padding:14px;background:var(--red);color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:.5px;transition:background .2s,transform .1s;display:flex;align-items:center;justify-content:center;gap:8px;}
-#btn-check:hover:not(:disabled){background:var(--red-dim);}
-#btn-check:active:not(:disabled){transform:scale(.99);}
-#btn-check:disabled{background:#ccc;cursor:not-allowed;}
+.prog{list-style:none;margin-top:14px;display:none;}
+.prog li{display:flex;gap:8px;font-size:12.5px;color:var(--ink2);padding:3px 0;}
+.prog .i{width:16px;text-align:center;flex-shrink:0;}
+.prog li.active{color:var(--ink);font-weight:600;} .prog li.done{color:var(--pass);} .prog li.error{color:var(--fail);}
+.bartrack{height:4px;background:var(--line);border-radius:2px;overflow:hidden;margin-top:12px;display:none;}
+.bartrack i{display:block;height:100%;width:0;background:var(--red);transition:width .35s;}
 
-/* PROGRESS */
-#progress-wrap{display:none;}
-.progress-bar-track{height:6px;background:var(--rule);border-radius:3px;overflow:hidden;margin-bottom:8px;}
-.progress-bar-fill{height:100%;width:0%;background:var(--red);border-radius:3px;transition:width .4s ease;}
-.progress-steps{display:flex;flex-direction:column;gap:6px;}
-.prog-step{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-2);}
-.prog-step .s-icon{width:16px;text-align:center;flex-shrink:0;}
-.prog-step.done{color:var(--pass);} .prog-step.active{color:var(--red);font-weight:600;} .prog-step.error{color:var(--fail);}
+/* ───── Tờ biểu mẫu ───── */
+.sheet{background:var(--paper);border:1px solid var(--line);border-radius:10px;overflow:clip;}
+.sheet-head{display:flex;gap:16px;align-items:flex-start;padding:20px 24px 14px;flex-wrap:wrap;}
+.sheet-head h2{font-size:20px;font-weight:700;letter-spacing:-.3px;line-height:1.25;}
+.sheet-head p{font-size:12.5px;color:var(--ink2);margin-top:3px;max-width:62ch;}
+.actions{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;}
+.btn{padding:8px 14px;border:1px solid var(--line2);border-radius:8px;background:var(--paper);font-weight:600;font-size:13px;cursor:pointer;}
+.btn:hover:not(:disabled){background:var(--hover);}
+.btn.primary{background:var(--ink);border-color:var(--ink);color:var(--paper);}
+.btn.primary:hover:not(:disabled){opacity:.9;background:var(--ink);}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
 
-/* RESULTS */
-#results{display:none;}
-.summary-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
-.sum-box{border-radius:8px;padding:14px 16px;border:1px solid transparent;}
-.sum-box.pass{background:var(--pass-bg);border-color:#b2dfc0;}
-.sum-box.warn{background:var(--warn-bg);border-color:#f0d890;}
-.sum-box.fail{background:var(--fail-bg);border-color:#f5b8b2;}
-.sum-box .num{font-size:28px;font-weight:800;line-height:1;}
-.sum-box.pass .num{color:var(--pass);} .sum-box.warn .num{color:var(--warn);} .sum-box.fail .num{color:var(--fail);}
-.sum-box .lbl{font-size:11px;color:var(--ink-2);margin-top:4px;}
 
-.check-table{width:100%;border-collapse:collapse;font-size:13px;}
-.check-table th{text-align:left;padding:8px 12px;background:var(--bg);font-size:11px;color:var(--ink-2);border-bottom:2px solid var(--rule);font-weight:700;text-transform:uppercase;letter-spacing:.5px;}
-.check-table td{padding:8px 12px;border-bottom:1px solid var(--rule);vertical-align:top;}
-.check-table tr:last-child td{border-bottom:none;}
-.check-table tr:hover td{background:#fafafa;}
+.score{padding:16px 24px 6px;display:none;}
+.score.on{display:block;}
+.meter{display:flex;height:8px;border-radius:4px;overflow:hidden;background:var(--line);}
+.meter i{display:block;height:100%;transition:width .4s;}
+.meter .p{background:var(--pass-solid);} .meter .f{background:var(--fail-solid);} .meter .w{background:#E0A100;}
+.chips{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+.chip{display:inline-flex;gap:6px;align-items:center;padding:5px 12px;border:1px solid var(--line2);border-radius:999px;background:transparent;font-size:12.5px;font-weight:500;cursor:pointer;}
+.chip b{font-weight:700;}
+.chip[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:var(--paper);}
+.legend{font-size:12px;color:var(--ink2);padding:10px 24px 0;max-width:110ch;}
 
-.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:700;white-space:nowrap;}
-.badge.ok{background:var(--pass-bg);color:var(--pass);}
-.badge.emp{background:var(--warn-bg);color:var(--warn);}
-.badge.mis{background:var(--fail-bg);color:var(--fail);}
+.panel{padding:14px 0 0;}
+.panel[hidden]{display:none;}
+.wrap{overflow-x:auto;padding:0 20px 24px;}
 
-.section-label{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--ink-2);padding:12px 0 6px;border-top:1px solid var(--rule);margin-top:16px;}
-.section-label:first-of-type{border-top:none;margin-top:0;}
+/* ───── Bảng checklist ───── */
+.form{width:100%;border-collapse:collapse;table-layout:fixed;min-width:860px;font-size:13px;}
+.form th{background:var(--head);border:1px solid var(--line2);padding:9px 10px;font-weight:700;text-align:center;font-size:12.5px;}
+.form td{border:1px solid var(--line);padding:9px 10px;vertical-align:top;}
+.form tr.sec td{background:var(--hover);font-weight:700;border-color:var(--line2);}
+.form td.stt{text-align:center;color:var(--ink2);font-variant-numeric:tabular-nums;}
+.form tr.sec td.stt{color:var(--ink);}
+.form .nd{font-weight:600;}
+.form .src{white-space:pre-line;color:var(--ink2);font-size:12.5px;line-height:1.55;}
+.form .type{text-align:center;font-size:12.5px;}
+.form .type.opt{color:var(--ink2);}
+.form tr.item:hover td{background:var(--hover);}
+.form td.ev{text-align:center;}
+.verdict{display:inline-flex;border:1px solid var(--line2);border-radius:8px;overflow:hidden;}
+.verdict button{border:0;background:transparent;padding:6px 12px;font-size:12.5px;font-weight:600;color:var(--ink2);cursor:pointer;}
+.verdict button+button{border-left:1px solid var(--line2);}
+.verdict button:hover{background:var(--hover);}
+.verdict button[aria-checked=true].p{background:var(--pass-solid);color:#fff;}
+.verdict button[aria-checked=true].f{background:var(--fail-solid);color:#fff;}
+.verdict.off{opacity:.4;pointer-events:none;}
+.how{display:block;font-size:11.5px;margin-top:6px;color:var(--ink2);}
+.how.wait{color:var(--wait);font-weight:600;}
+.how.edit{color:var(--focus);}
+.note{min-height:20px;outline:none;border-radius:4px;padding:1px 3px;margin:-1px -3px;white-space:pre-wrap;word-break:break-word;font-size:12.5px;}
+.note:focus{background:var(--hover);box-shadow:0 0 0 1.5px var(--line2);}
+.note:empty::before{content:"Thêm ghi chú";color:var(--ink2);opacity:.55;}
+.hintnote{display:block;font-style:italic;color:var(--ink2);font-size:12px;margin-top:4px;}
+tr.item[data-st=fail] td.ev,tr.item[data-st=fail] td.stt{box-shadow:inset 3px 0 0 var(--fail-solid);}
+tr.item[data-st=fail] td.ev{box-shadow:none;}
+tr.item[data-st=fail] td.stt{box-shadow:inset 3px 0 0 var(--fail-solid);}
+tr.item[data-st=review] td.stt{box-shadow:inset 3px 0 0 #E0A100;}
+tr.item[data-st=pending] td.stt{box-shadow:inset 3px 0 0 var(--line2);}
+.empty{padding:36px 24px;text-align:center;color:var(--ink2);}
 
-.ai-block{margin-top:12px;border-radius:6px;overflow:hidden;border:1px solid var(--rule);}
-.ai-block-head{padding:10px 14px;background:var(--bg);border-bottom:1px solid var(--rule);display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--ink-2);}
-.ai-block-head .gemini-tag{margin-left:auto;font-size:10px;padding:2px 7px;background:#e8f0fe;color:#1a73e8;border-radius:10px;font-weight:700;}
-.ai-block-body{padding:14px;font-size:13px;line-height:1.7;white-space:pre-wrap;word-break:break-word;}
-.ai-block-body.ok-text{color:var(--pass);font-weight:600;}
-.ai-block-body.warn-text{color:var(--warn);}
+/* ───── Tab cấu trúc & AI ───── */
+.tbl{width:100%;border-collapse:collapse;font-size:13px;}
+.tbl th{text-align:left;padding:8px 10px;background:var(--head);border:1px solid var(--line2);font-size:12.5px;}
+.tbl td{padding:8px 10px;border:1px solid var(--line);vertical-align:top;}
+.tbl tr.grp td{background:var(--hover);font-weight:700;}
+.tag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap;}
+.tag.ok{background:var(--pass-bg);color:var(--pass);} .tag.emp,.tag.ord{background:var(--wait-bg);color:var(--wait);} .tag.mis{background:var(--fail-bg);color:var(--fail);}
+.ai-head{font-weight:700;font-size:14px;margin:18px 24px 8px;}
+.ai-head:first-child{margin-top:4px;}
+.ai{margin:0 24px 12px;border:1px solid var(--line);border-radius:8px;overflow:hidden;}
+.ai-t{display:flex;gap:10px;align-items:center;padding:9px 14px;background:var(--hover);border-bottom:1px solid var(--line);font-weight:600;font-size:13px;}
+.ai-t em{margin-left:auto;font-style:normal;font-weight:500;font-size:12px;color:var(--ink2);}
+.ai-b{padding:12px 14px;white-space:pre-wrap;word-break:break-word;line-height:1.7;font-size:13px;}
+.ai-b.ok{color:var(--pass);font-weight:600;} .ai-b.err{color:var(--wait);}
 
-/* INFO BOX */
-.info-box{background:#e8f0fe;border:1px solid #c5d8fc;border-radius:6px;padding:10px 14px;font-size:12px;color:#1557b0;margin-top:10px;}
-.info-box strong{display:block;margin-bottom:3px;}
 
-#btn-export{padding:10px 20px;background:var(--ink);color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;transition:background .2s;}
-#btn-export:hover{background:#333;}
 
-#toast{position:fixed;bottom:24px;right:24px;background:var(--ink);color:#fff;padding:12px 18px;border-radius:8px;font-size:13px;transform:translateY(80px);opacity:0;transition:all .3s;pointer-events:none;z-index:999;}
-#toast.show{transform:translateY(0);opacity:1;}
+.tabs{display:flex;gap:2px;padding:0 24px;border-bottom:1px solid var(--line);overflow-x:auto;}
+.tab{padding:10px 14px;border:0;background:none;font-weight:500;color:var(--ink2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;}
+.tab[aria-selected=true]{color:var(--ink);font-weight:600;border-bottom-color:var(--red);}
+.tab .n{margin-left:6px;font-size:11.5px;padding:1px 7px;border-radius:999px;background:var(--wait-bg);color:var(--wait);font-weight:600;}
 
-.mt8{margin-top:8px;} .mt16{margin-top:16px;}
-.text-muted{color:var(--ink-2);font-size:12px;}
-@media(max-width:600px){.settings-grid,.settings-grid.col3{grid-template-columns:1fr;}.summary-bar{grid-template-columns:1fr 1fr;}main{padding:16px 12px 60px;}}
+/* ───── Bảng: tiêu đề dính, rút gọn tiêu chuẩn, chi tiết AI ───── */
+.score-text{font-size:14px;font-weight:600;margin-bottom:10px;}
+.form thead th{position:sticky;top:57px;z-index:5;}
+.form .src .t{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;}
+.form tr.x .src .t{display:block;-webkit-line-clamp:unset;}
+.lnk{display:inline-block;margin-top:4px;border:0;background:none;color:var(--focus);font-size:12px;font-weight:600;cursor:pointer;padding:0;}
+.lnk:hover{text-decoration:underline;}
+.more{display:inline-flex;gap:6px;align-items:center;margin-top:8px;padding:4px 10px;border:1px solid var(--line2);border-radius:999px;background:transparent;font-size:12px;font-weight:600;cursor:pointer;}
+.more:hover{background:var(--hover);}
+.more[aria-expanded=true]{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+.form tr.detail td{background:var(--hover);padding:12px 16px;}
+.dt{font-size:12.5px;line-height:1.65;max-width:120ch;}
+.dt b.h{display:block;margin:8px 0 2px;}
+.dt b.h:first-child{margin-top:0;}
+.dt div{padding:3px 0;border-top:1px dashed var(--line);}
+.dt div.sub{border:0;font-weight:700;margin-top:6px;}
+.dt .lb{font-weight:700;color:var(--ink);}
+.dt .ar{color:var(--ink2);padding:0 4px;}
+.privacy{margin-top:16px;padding:11px 12px;border:1px solid var(--line);border-radius:8px;background:var(--paper);font-size:12px;color:var(--ink2);}
+.privacy b{color:var(--ink);font-size:12.5px;}
+.privacy p{margin-top:3px;}
+.privacy details{margin-top:8px;}
+.privacy summary{cursor:pointer;color:var(--focus);font-weight:600;}
+.privacy textarea{width:100%;height:200px;margin-top:6px;padding:8px;border:1px solid var(--line2);border-radius:6px;background:var(--desk);color:var(--ink);font:12px/1.5 ui-monospace,Menlo,monospace;resize:vertical;}
+@media (min-width:1280px){.wrap{overflow:visible;}}
+@media (max-width:1279px){.form thead th{position:static;}}
+
+#toast{position:fixed;bottom:24px;right:24px;max-width:min(420px,calc(100vw - 32px));background:var(--ink);color:var(--paper);padding:11px 16px;border-radius:8px;font-size:13px;transform:translateY(80px);opacity:0;transition:transform .25s,opacity .25s;pointer-events:none;z-index:99;}
+#toast.show{transform:none;opacity:1;}
+
+@media (max-width:980px){
+  .shell{grid-template-columns:1fr;padding:16px 14px 70px;}
+  .rail{position:static;}
+  .bar{padding:10px 14px;}
+  .bar p{display:none;}
+  .sheet-head,.tabs{padding-left:16px;padding-right:16px;}
+  .wrap{padding:0 16px 20px;}
+  .score,.legend{padding-left:16px;padding-right:16px;}
+  .ai,.ai-head{margin-left:16px;margin-right:16px;}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;}}
 </style>
 </head>
 <body>
 
-<header>
-  <div class="logo-mark">
-    <svg viewBox="0 0 26 26" width="26" height="26"><rect width="26" height="26" rx="4" fill="#C0001A"/><text x="4" y="19" font-size="14" font-weight="800" fill="#fff" font-family="Arial">V</text></svg>
-  </div>
+<header class="bar">
+  <div class="mark" aria-hidden="true">V</div>
   <div>
-    <h1>VTG · Kiểm tra Tuân thủ Quy trình</h1>
-    <p>Viettel Global — Chuyên viên Quản trị Quy trình</p>
+    <h1>Kiểm tra tuân thủ quy trình</h1>
+    <p>Viettel Global · Quản trị quy trình</p>
   </div>
-  <div class="conn-badge" id="conn-badge">
-    <div class="dot" id="conn-dot"></div>
-    <span id="conn-text">Chưa xác thực Gemini</span>
+  <div class="pill" id="conn" role="status" aria-live="polite">
+    <span class="dot busy" id="conn-dot"></span><span id="conn-text">Đang kết nối hệ thống…</span>
   </div>
 </header>
 
-<main>
+<div class="shell">
 
-  <!-- BƯỚC 1: UPLOAD -->
-  <div class="card">
-    <div class="card-head"><div class="step-num">1</div><h2>Tải lên tài liệu quy trình</h2></div>
-    <div class="card-body">
-      <div id="drop-zone">
-        <input type="file" id="file-input" accept=".docx,.pdf">
-        <span class="icon">📄</span>
-        <p>Kéo thả file vào đây hoặc <strong>bấm để chọn</strong></p>
-        <p class="text-muted mt8">Hỗ trợ: <strong>.docx</strong> và <strong>.pdf</strong> — tối đa 20MB</p>
-        <div id="file-name"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- BƯỚC 2: CHỌN MODEL -->
-  <div class="card">
-    <div class="card-head"><div class="step-num">2</div><h2>Chọn model AI (Tầng 2 — AI thẩm định)</h2></div>
-    <div class="card-body">
-
-      <!-- Model selector -->
-      <div style="margin-bottom:14px;">
-        <div style="font-size:12px;font-weight:700;color:var(--ink-2);margin-bottom:8px;">Chọn model Gemini</div>
-        <div class="model-tabs">
-          <button class="model-tab active" data-model="gemini-2.5-flash-lite">gemini-2.5-flash-lite ⭐</button>
-          <button class="model-tab" data-model="gemini-2.5-flash">gemini-2.5-flash</button>
-          <button class="model-tab" data-model="gemini-2.5-pro">gemini-2.5-pro</button>
+  <aside class="rail">
+    <ol class="steps">
+      <li class="step" id="st1">
+        <h2>Tải file quy trình</h2>
+        <div class="drop" id="drop">
+          <input type="file" id="file-input" accept=".docx,.pdf" aria-label="Chọn file quy trình">
+          <b id="drop-main">Kéo thả hoặc bấm để chọn</b>
+          <span id="drop-sub">.docx hoặc .pdf, tối đa 20 MB</span>
         </div>
-        <input type="hidden" id="gemini-model" value="gemini-2.5-flash-lite">
+      </li>
+      <li class="step" id="st2">
+        <h2>Chọn model AI</h2>
+        <div class="models" id="models">
+          <label class="model"><input type="radio" name="model" value="gemini-2.5-flash-lite" checked><div><b>gemini-2.5-flash-lite</b><span>Nhanh, chi phí thấp. Mặc định.</span></div></label>
+          <label class="model"><input type="radio" name="model" value="gemini-2.5-flash"><div><b>gemini-2.5-flash</b><span>Cân bằng giữa tốc độ và độ sâu.</span></div></label>
+          <label class="model"><input type="radio" name="model" value="gemini-2.5-pro"><div><b>gemini-2.5-pro</b><span>Phân tích sâu nhất, chậm và tốn hơn.</span></div></label>
+        </div>
+        <p class="hint">Khóa API do hệ thống giữ chung, không cần nhập. Hệ thống tự kiểm tra kết nối.</p>
+      </li>
+      <li class="step" id="st3">
+        <h2>Kiểm tra</h2>
+        <button class="run" id="btn-check" type="button" disabled>Kiểm tra tuân thủ</button>
+        <p class="why" id="why">Tải file để bắt đầu.</p>
+        <div class="bartrack" id="track"><i id="prog-fill"></i></div>
+        <ul class="prog" id="prog"></ul>
+        <div class="privacy" id="privacy">
+          <b>Bảo vệ thông tin</b>
+          <p id="privacy-sum">Trước khi gửi AI, hệ thống tự ẩn email, số điện thoại, số định danh, mật khẩu và họ tên đi kèm nhãn.</p>
+          <details id="privacy-view" hidden><summary>Xem văn bản gửi AI</summary><textarea id="privacy-text" readonly aria-label="Văn bản đã ẩn thông tin nhạy cảm gửi cho AI"></textarea></details>
+        </div>
+      </li>
+    </ol>
+  </aside>
+
+  <section class="sheet" aria-label="Kết quả kiểm tra">
+    <div class="sheet-head">
+      <div>
+        <h2 id="sh-title">Checklist thẩm định</h2>
+        <p id="sheet-sub"></p>
       </div>
-
-      <div class="info-box">
-        <strong>🔒 Hệ thống dùng chung của VTG</strong>
-        API key được quản lý tập trung trên server, không cần nhập key cá nhân.
-      </div>
-
-      <button style="margin-top:12px;padding:8px 16px;border:1.5px solid var(--red);background:#fff;color:var(--red);border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;" onclick="testServer()">
-        🔗 Kiểm tra kết nối hệ thống
-      </button>
-    </div>
-  </div>
-
-  <!-- BƯỚC 3: CHẠY -->
-  <div class="card">
-    <div class="card-head"><div class="step-num">3</div><h2>Thực hiện kiểm tra</h2></div>
-    <div class="card-body">
-      <button id="btn-check" disabled>
-        <span>🛡️</span> Bắt đầu kiểm tra tuân thủ
-      </button>
-      <div id="progress-wrap" class="mt16">
-        <div class="progress-bar-track"><div class="progress-bar-fill" id="prog-fill"></div></div>
-        <div class="progress-steps" id="prog-steps"></div>
+      <div class="actions">
+        <button class="btn primary" id="btn-xlsx" type="button" disabled>Tải checklist (.xlsx)</button>
+        <button class="btn" id="btn-txt" type="button" disabled>Tải báo cáo (.txt)</button>
       </div>
     </div>
-  </div>
 
-  <!-- KẾT QUẢ -->
-  <div class="card" id="results">
-    <div class="card-head">
-      <div class="step-num">✓</div>
-      <h2>Kết quả kiểm tra</h2>
-      <div style="margin-left:auto"><button id="btn-export">⬇ Xuất báo cáo .txt</button></div>
+
+    <div class="tabs" role="tablist" id="tabs"></div>
+
+    <div class="score" id="score">
+      <p class="score-text" id="score-text"></p>
+      <div class="meter" id="meter" role="img" aria-label="Tỷ lệ kết quả"></div>
+      <div class="chips" id="chips"></div>
     </div>
-    <div class="card-body" id="results-body"></div>
-  </div>
 
-</main>
-<div id="toast"></div>
+    <div class="panel" id="p-cl">
+      <p class="legend" id="legend">Chưa có kết quả. Bảng bên dưới là toàn bộ nội dung cần kiểm tra; sau khi chạy, cột Đánh giá được điền tự động và có thể sửa tay.</p>
+      <div class="wrap"><table class="form" id="form"></table></div>
+    </div>
+  </section>
+
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
 
 <script>
 function makeAbortSignal(ms){const c=new AbortController();setTimeout(()=>c.abort(),ms);return c.signal;}
-
 pdfjsLib.GlobalWorkerOptions.workerSrc =
   "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
@@ -345,15 +428,14 @@ const STRUCTURE = [
    kw:["PHỤ LỤC ĐÍNH KÈM","TÊN PHỤ LỤC"]},
 ];
 
-// ══════════════════════════════════════════════════════
-// AI CHECKS — 2 TASK CHUYÊN SÂU
-// ══════════════════════════════════════════════════════
 const LANG_RULE = `\n⚠️ BẮT BUỘC:\n- Toàn bộ câu trả lời PHẢI viết bằng tiếng Việt. KHÔNG dùng tiếng Anh.\n- KHÔNG viết lời chào, lời mở đầu, lời kết. Đi thẳng vào nội dung phân tích.\n- KHÔNG tóm tắt lại nhiệm vụ. Chỉ trả lời kết quả phân tích.\n`;
 
+// ══════════════════════════════════════════════════════
+// TẦNG 2 — CÁC TÁC VỤ AI (chỉ phục vụ các dòng của checklist)
+// ══════════════════════════════════════════════════════
 const AI_CHECKS = [
-  // ── TASK I ───────────────────────────────────────────
   {
-    id:"content_step_name", label:"I.1 — Tên bước: Động từ + Tân ngữ", icon:"✍️", task:"I",
+    id:"content_step_name", label:"I.1 — Tên bước: Động từ + Tân ngữ", short:"Tên bước (động từ + tân ngữ)", task:"I",
     prompt:`Chuyên gia thẩm định quy trình VTG.
 ${LANG_RULE}
 KIỂM TRA: Cột "Hoạt động" — mỗi tên bước PHẢI theo cấu trúc "Động từ hành chính + Tân ngữ cụ thể".
@@ -367,7 +449,7 @@ NỘI DUNG:
 `
   },
   {
-    id:"content_5elements", label:"I.2 — Mỗi bước đủ 5 yếu tố (Hoạt động / Mô tả chi tiết / Vai trò / Đầu vào / Đầu ra)", icon:"🔲", task:"I",
+    id:"content_5elements", label:"I.2 — Mỗi bước đủ 5 yếu tố (Hoạt động / Mô tả chi tiết / Vai trò / Đầu vào / Đầu ra)", short:"Đủ 5 yếu tố mỗi bước", task:"I",
     prompt:`Chuyên gia thẩm định quy trình VTG.
 ${LANG_RULE}
 KIỂM TRA: Từng bước có đủ 5 yếu tố:
@@ -384,31 +466,15 @@ Không có lỗi → ghi: KHÔNG CÓ LỖI
 NỘI DUNG:
 `
   },
-  // ── TASK II ──────────────────────────────────────────
   {
-    id:"logic", label:"II.1 — Tính logic của quy trình", icon:"🔍", task:"II",
-    prompt:`Chuyên gia thẩm định quy trình tại VTG.
-${LANG_RULE}
-NHẬN XÉT tính logic và mạch lạc của quy trình dựa trên toàn bộ nội dung bảng Thuyết minh. CHỈ nêu phát hiện có căn cứ từ nội dung, không suy diễn.
-
-Trả lời theo từng gạch đầu dòng ngắn gọn:
-- [Phát hiện]: [mô tả vấn đề cụ thể tại bước nào] → [Đề xuất điều chỉnh]
-
-Kiểm tra các tiêu chí sau (chỉ nêu tiêu chí có vấn đề):
-1. Thứ tự bước có hợp lý không (đầu ra bước trước có đúng là đầu vào bước sau không)?
-2. Có bước nào bị thiếu trong luồng xử lý thực tế không?
-3. Có bước nào trùng lặp chức năng không?
-4. Điều kiện rẽ nhánh (nếu có) có đầy đủ và rõ ràng không?
-5. Đầu ra cuối cùng của quy trình có khớp với Sự kiện kết thúc đã khai báo không?
-
-NỘI DUNG:
-`
-  },
-  {
-    id:"risk_kpi", label:"II.2 — KPIs & Rủi ro", icon:"📊", task:"II",
+    id:"risk_kpi", label:"II.2 — KPIs & Rủi ro", short:"KPI và rủi ro", task:"I",
     prompt:`Chuyên gia quản trị rủi ro và KPI tại VTG.
 ${LANG_RULE}
-ĐÁNH GIÁ ngắn gọn mục KPI (6.4) và Rủi ro (6.5). Nếu mục ghi "Không có" → bỏ qua phần đó và chuyển sang đề xuất bổ sung.
+DÒNG ĐẦU TIÊN (bắt buộc, đúng định dạng, không thêm chữ nào khác):
+KẾT LUẬN: KPI=<ĐẠT hoặc CẦN SỬA hoặc KHÔNG CÓ>; RỦI RO=<ĐẠT hoặc CẦN SỬA hoặc KHÔNG CÓ>
+(ĐẠT = không có mục nào cần điều chỉnh; CẦN SỬA = có ít nhất một mục cần điều chỉnh; KHÔNG CÓ = mục trống hoặc ghi "Không có".)
+
+SAU ĐÓ đánh giá ngắn gọn mục KPI và Rủi ro. Nếu mục ghi "Không có" → bỏ qua phần đó và chuyển sang đề xuất bổ sung.
 
 A. KPI — CHỈ nêu KPI cần điều chỉnh (tần suất quá dài/khó đo/không khả thi/chưa cụ thể/thiếu thời hạn):
 [Tên KPI] → [vấn đề ngắn gọn] → Sửa: [cụ thể]
@@ -420,92 +486,530 @@ B. RỦI RO — CHỈ nêu rủi ro cần điều chỉnh (biện pháp chung/kh
 Bổ sung (tối đa 3, chỉ rủi ro trọng yếu thực sự thiếu):
 - [Tên rủi ro] | [Biện pháp kiểm soát cụ thể]
 
-TOÀN BỘ NỘI DUNG QUY TRÌNH (mục 6.4 và 6.5):
+TOÀN BỘ NỘI DUNG QUY TRÌNH:
 `
   }
 ];
 
 // ══════════════════════════════════════════════════════
-// STATE
+// CHECKLIST THẨM ĐỊNH — Biểu mẫu 4 (nguồn: 10.Checklist tham dinh quy trinh.xlsx)
 // ══════════════════════════════════════════════════════
-let fileContent = "";
-let fileName    = "";
-let reportText  = "";
-let selectedModel = "gemini-2.5-flash-lite";
+const CL_FORMS = [
+ {
+  "id": "BM3",
+  "tab": "Biểu mẫu 3: Pháp lý",
+  "title": "Biểu mẫu 3: CHECKLIST THẨM ĐỊNH PHÁP LÝ VĂN BẢN QUẢN LÝ",
+  "sub": "(đính kèm Hướng dẫn thiết kế, xây dựng và đánh giá văn bản quản lý)",
+  "data": [
+   {
+    "sec": "I",
+    "title": "Tuân thủ pháp luật"
+   },
+   {
+    "n": 1,
+    "name": "Nhận diện văn bản pháp luật áp dụng",
+    "src": "Đã xác định đầy đủ luật, văn bản dưới luật và quy định của cơ quan quản lý chuyên ngành điều chỉnh hoạt động thuộc phạm vi VBQL; các văn bản này được liệt kê tại mục Tài liệu liên quan của dự thảo và tại Bảng ánh xạ yêu cầu pháp luật.",
+    "type": "Bắt buộc",
+    "note": ""
+   },
+   {
+    "n": 2,
+    "name": "Hiệu lực của văn bản pháp luật được dẫn chiếu",
+    "src": "Văn bản pháp luật được dẫn chiếu còn hiệu lực tại thời điểm thẩm định; đã cập nhật các nội dung sửa đổi, bổ sung, thay thế (nếu có).",
+    "type": "Bắt buộc",
+    "note": ""
+   },
+   {
+    "sec": "II",
+    "title": "Tích hợp yêu cầu pháp luật vào văn bản quản lý"
+   },
+   {
+    "n": 1,
+    "name": "Bảng ánh xạ yêu cầu pháp luật",
+    "src": "ĐVST đã lập Bảng ánh xạ yêu cầu pháp luật (sheet \"Bang anh xa YC PL\") gửi kèm dự thảo; bảng bao quát đầy đủ các yêu cầu bắt buộc từ các văn bản pháp luật đã nhận diện tại mục I.1.",
+    "type": "Bắt buộc",
+    "note": ""
+   },
+   {
+    "n": 2,
+    "name": "Chuyển hóa yêu cầu pháp luật thành bước thực hiện",
+    "src": "Mỗi yêu cầu bắt buộc được thể hiện thành bước, hoạt động cụ thể trong phần Thuyết minh của VBQL; không chỉ dẫn chiếu chung chung dạng \"thực hiện theo quy định của pháp luật\".",
+    "type": "Bắt buộc",
+    "note": ""
+   },
+   {
+    "n": 3,
+    "name": "Chủ thể chịu trách nhiệm",
+    "src": "Mỗi yêu cầu bắt buộc có chủ thể giữ vai trò R (thực hiện) và A (phê duyệt) trong ma trận RASCI của VBQL.",
+    "type": "Bắt buộc",
+    "note": ""
+   }
+  ]
+ },
+ {
+  "id": "BM4",
+  "tab": "Biểu mẫu 4: Rủi ro và chốt kiểm soát",
+  "title": "Biểu mẫu 4: CHECKLIST THẨM ĐỊNH RỦI RO VÀ CHỐT KIỂM SOÁT",
+  "sub": "(đính kèm Hướng dẫn thiết kế, xây dựng và đánh giá văn bản quản lý)",
+  "data": [
+   {
+    "sec": "I",
+    "title": "Phần chung"
+   },
+   {
+    "n": 1,
+    "name": "Mã hiệu quy trình đúng quy định và không bị trùng lặp",
+    "src": "Quy định thể thức và kỹ thuật trình bày văn bản, số 35/QĐ-VTG, ngày 26/1/2024\n- Đối với QT do TCT ban hành: QT.VTG.ZZ.XX (trong đó ZZ là ký hiệu cơ quan soạn thảo)\n- Đối với QT do CQ ban hành: QT.VTG.ZZ.XX (trong đó ZZ là ký hiệu tên bộ phận soạn thảo hoặc lĩnh vực liên quan đến nội dung văn bản",
+    "type": "Bắt buộc",
+    "note": ""
+   },
+   {
+    "n": 2,
+    "name": "Sự phù hợp của ngày có hiệu lực",
+    "src": "Ngày có hiệu lực sau ngày ban hành văn bản",
+    "type": "Bắt buộc",
+    "note": ""
+   },
+   {
+    "n": 3,
+    "name": "Sự phù hợp của ngày hết hiệu lực",
+    "src": "Ngày hết hạn hiệu lực không được quy định",
+    "type": "Bắt buộc",
+    "note": ""
+   },
+   {
+    "n": 4,
+    "name": "Tính đúng đắn của số lần ban hành văn bản",
+    "src": "Số lần ban hành văn bản có khớp với chi tiết các lần ban hành được nêu trong nội dung sửa đổi bên dưới",
+    "type": "Bắt buộc",
+    "note": ""
+   },
+   {
+    "n": 5,
+    "name": "Tính đầy đủ của nội dung sửa đổi",
+    "src": "Bảng theo dõi nội dung sửa đổi nêu tóm tắt các thông tin được điều chỉnh, bổ sung so với QT cũ và ngày bắt đầu có hiệu lực đối với nội dung mới",
+    "type": "Bắt buộc",
+    "note": ""
+   },
+   {
+    "n": 6,
+    "name": "Cá nhân ký duyệt",
+    "src": "Chân ký có đảm bảo đầy đủ thành phần: soạn thảo, kiểm tra, thẩm định và phê duyệt không?",
+    "type": "Bắt buộc",
+    "note": ""
+   },
+   {
+    "n": 7,
+    "name": "Tóm tắt quy trình",
+    "src": "Gồm các nội dung vắn tắt về: (i) phạm vi điều chỉnh và đối tượng áp dụng (ii) các hoạt động chính (iii) vai trò RASC tham gia",
+    "type": "Bắt buộc",
+    "note": ""
+   },
+   {
+    "sec": "II",
+    "title": "Phần chi tiết"
+   },
+   {
+    "n": 1,
+    "name": "Mục đích",
+    "src": "Mục đích quy trình để trả lời câu hỏi tại sao phải có quy trình (Why), cụ thể: Quy trình tạo ra kết quả gì? Nhằm giải quyết vấn đề, nhu cầu gì? Của ai?",
+    "type": "Bắt buộc",
+    "note": ""
+   },
+   {
+    "n": 2,
+    "name": "Phạm vi điều chỉnh và đối tượng áp dụng",
+    "src": "Xác định QT có tác động hoặc chi phối đến những đối tượng, nội dung nào?\nLưu ý: Quy trình có phạm vi điều chỉnh trong Tổng Công ty thì không thể áp dụng cho các đối tượng là các công ty con, công ty liên kết (gọi tắt là Công ty thị trường). Việc điều hành các công ty này phải được thông qua Người đại diện vốn của VTG tại các Công ty thị trường.",
+    "type": "Bắt buộc",
+    "note": ""
+   },
+   {
+    "n": 3,
+    "name": "Tài liệu liên quan",
+    "src": "Xác định các nội dung chi phối và quan hệ:\n- Quy trình bị chi phối bởi các chinh sách, quy định nào?\n- Quy trình này có quan hệ với quy trình nào khác? Mối quan hệ đó được mô tả như thế nào",
+    "type": "Bắt buộc",
+    "note": ""
+   },
+   {
+    "n": 4,
+    "name": "Thuật ngữ và từ viết tắt",
+    "src": "Thuật ngữ và từ viết tắt được giải thích đầy đủ\n- Giải thích thuật ngữ: là việc xác định các từ ngữ biểu thị khái niệm thường được sử dụng trong các văn bản thuộc các lĩnh vực khác nhau, thuật ngữ không có tính biểu cảm;\n- Từ viết tắt: là xác định rút gọn cách viết của một từ hoặc từ ngữ được sử dụng nhiều lần trong quy trình.",
+    "type": "Bắt buộc",
+    "note": ""
+   },
+   {
+    "n": 5,
+    "name": "Sự kiện bắt đầu và sự kiện kết thúc QT",
+    "src": "- Sự kiện bắt đầu: là sự việc dẫn đến việc thực hiện QT, QT sẽ không diễn ra nếu không có điều kiện khởi tạo này\n- Sự kiện kết thúc: là sự việc dẫn đến việc kết thúc QT, QT sẽ chưa kết thúc khi sự kiện này chưa xảy ra",
+    "type": "Bắt buộc",
+    "note": ""
+   },
+   {
+    "n": 6,
+    "name": "Sản phẩm đầu vào và đầu ra của QT",
+    "src": "- Đầu vào: là dữ liệu, thông tin được sử dụng để triển khai các hoạt động trong QT\n- Đầu ra: là kết quả có được sau khi thực hiện các hoạt động trong QT",
+    "type": "Bắt buộc",
+    "note": ""
+   },
+   {
+    "n": 7,
+    "name": "Lưu đồ QT",
+    "src": "Lưu đồ được trình bày đầy đủ các thông tin chính bằng các ký hiệu theo ngôn ngữ BPMN (business process model and notation), bao gồm các nội dung: (i) Sự kiện bắt đầu và sự kiện kết thúc (ii) Các hoạt động chính (iii) Các chủ thể tham gia (iv) Luồng kiểm soát (v) Các yếu tố bổ trợ khác (nếu có) như: chứng từ, tài liệu, dữ liệu, điều kiện,...\nVới ngôn ngữ BPMN thì có thể sử dụng hai công cụ là MS Visio và Bizagi Modeler)\nLưu ý:\n+ Đánh số thứ tự cho các hoạt động chính trong lưu đồ;\n+ Đặt tên các hoạt động chính theo cú pháp “động từ chính+tân ngữ’",
+    "type": "Bắt buộc",
+    "note": ""
+   },
+   {
+    "n": 8,
+    "name": "Thuyết minh QT",
+    "src": "Thuyết minh là việc diễn giải lần lượt từng hoạt động chính và các thông tin liên quan, gồm đầy đủ các thông tin sau:\n- Hoạt động chính trong quy trình;\n- Mô tả chi tiết cách thức thực hiện để hoàn thành hoạt động;\n- Cơ quan/bộ phận có vai trò thực hiện;\n- Đầu vào / Đầu ra;\n- Hệ thống, công cụ, phần mềm và/hoặc biểu mẫu, hướng dẫn thực hiện\n- Thời gian hoàn thành; thời điểm, tần suất thực hiện.",
+    "type": "Bắt buộc",
+    "note": ""
+   },
+   {
+    "n": 9,
+    "name": "Ma trận phân quyền RASCI",
+    "src": "Những chủ thể tham gia có những vai trò khác nhau đối với từng hoạt động của QT. Những vai trò này gồm:\n- R-Responsible: vai trò chịu trách nhiệm thực hiện hoạt động, mỗi hoạt động cần có ít nhất một chủ thể thực hiện vai trò này. Khi có nhiều hơn một chủ thể thực hiện vai trò này trong một hoạt động thì cần miêu tả chi tiết hoạt động đó thành quy trình con để xác định chia vai trò;\n- A-Approved: vai trò quyết định và phê duyệt kết quả hoạt động. Chủ thể đóng vai trò R phải có trách nhiệm báo cáo và giải trình cho chủ thể có vai trò A kết quả hoạt động. Mỗi một hoạt động chỉ có duy nhất một chủ thể thực hiện vai trò A;\n- S-Support: vai trò cung cấp đầu vào cần thiết, hỗ trợ thực hiện các hoạt động của QT;\n- I-Informed: vai trò được thông báo hoặc cung cấp thông tin về tiến độ, kết quả thực hiện hoạt động/QT;\n- C-Consulted: vai trò cung cấp thông tin tư vấn chuyên môn cho việc thực hiện các hoạt động trong QT",
+    "type": "Bắt buộc",
+    "note": ""
+   },
+   {
+    "n": 10,
+    "name": "Vai trò ánh xạ theo mô hình tổ chức",
+    "src": "Xác định từng cơ quan, bộ phận liên quan trong mô hình tổ chức hiện tại có vai trò thực hiện QT",
+    "type": "Bắt buộc",
+    "note": ""
+   },
+   {
+    "n": 11,
+    "name": "Chỉ số đánh giá, đo lường việc thực hiện quy trình (KPIs)",
+    "src": "Xác định KPIs dựa trên các chỉ số:\n- Thời gian: nhằm xác định và theo dõi thời gian thực hiện quy trình, có thể bao gồm: thời gian thực hiện từng hoạt động, thời gian chờ đợi giữa các hoạt động và thời gian để thực hiện toàn bộ quy trình;\n- Chi phí: nhằm xác định và theo dõi chi phí phát sinh thực hiện quy trình, có thể bao gồm: chi phí nhân công, nguyên vật liệu để thực hiện các hoạt động và tổng chi phí để thực hiện toàn bộ quy trình;\n- Chất lượng: nhằm đánh giá việc hoàn thành mục tiêu chất lượng của đầu ra quy trình (vd: tỷ lệ sai sót, lỗi, mức độ hài lòng); \n- Tính linh hoạt: nhằm đánh giá khả năng quy trình có thể xử lý nhiều trường hợp khác nhau và khi khối lượng công việc thay đổi.\nThông tin KPI đánh giá QT gồm đầy đủ: (i) tên KPI (ii) cách tính (iii) mục tiêu (target) (iv) tần suất đánh giá (v) đơn vị thực hiện (vi) đơn vị đánh giá",
+    "type": "Bắt buộc",
+    "note": ""
+   },
+   {
+    "n": 12,
+    "name": "Rủi ro và chốt kiểm soát",
+    "src": "Áp dụng bộ Quy trình quản trị rủi ro hiện hành để xác định rủi ro ảnh hưởng đến việc đạt được kết quả mong đợi, mục tiêu QT và các biện pháp khắc phục phù hợp. Gồm các thông tin: (i) rủi ro nhận diện (ii) nguyên nhân (iii) biện pháp kiểm soát (iv) loại kiểm soát",
+    "type": "Tùy chọn",
+    "note": "Không thông tin thì ghi là KHÔNG CÓ"
+   },
+   {
+    "n": 13,
+    "name": "Xử lý ngoại lệ",
+    "src": "Xác định các trường hợp có thể xảy rà mà không đi theo trình tự, thủ tục các bước của QT",
+    "type": "Tùy chọn",
+    "note": "Không thông tin thì ghi là KHÔNG CÓ"
+   },
+   {
+    "n": 14,
+    "name": "Tổ chức thực hiện",
+    "src": "Xác định các yếu tố phụ thuộc vào các điều kiện đảm bảo về hệ thống/tài liệu/con người và mức độ ưu tiên, thời gian dự kiến để thực hiện QT",
+    "type": "Tùy chọn",
+    "note": "Không thông tin thì ghi là KHÔNG CÓ"
+   },
+   {
+    "n": 15,
+    "name": "Biểu mẫu/hướng dẫn hoặc hồ sơ lưu",
+    "src": "Thống kê để đảm bảo tài liệu thực hiện và lưu trữ hồ sơ",
+    "type": "Tùy chọn",
+    "note": "Không thông tin thì ghi là KHÔNG CÓ"
+   }
+  ]
+ }
+];
+
+const CL_ROWS = (() => {
+  const arr = [];
+  for (const f of CL_FORMS) {
+    let sec = null;
+    for (const o of f.data) {
+      if (o.sec) { sec = o; arr.push({ kind:"sec", form:f.id, sec:o.sec, title:o.title }); }
+      else arr.push({ kind:"item", form:f.id, key:f.id + "." + sec.sec + "." + o.n, sec:sec.sec, ...o });
+    }
+  }
+  return arr;
+})();
+
+const MANUAL = {};
+
+
 
 // ══════════════════════════════════════════════════════
-// MODEL TABS
+// ẨN THÔNG TIN NHẠY CẢM TRƯỚC KHI GỬI AI
+// Chạy ngay trong trình duyệt: văn bản gốc không rời máy khi chưa được che.
+// (api/check.js có thêm một lớp che dự phòng phía server.)
 // ══════════════════════════════════════════════════════
-document.querySelectorAll(".model-tab").forEach(btn => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".model-tab").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    selectedModel = btn.dataset.model;
-    document.getElementById("gemini-model").value = selectedModel;
+const NOT_NAME = /GIÁM ĐỐC|TRƯỞNG|PHÓ|PHÒNG|BAN\b|TỔNG|CHUYÊN VIÊN|LÃNH ĐẠO|HỘI ĐỒNG|CÔNG TY|TỔNG CÔNG TY|TCT|VTG|VIETTEL|NHÂN VIÊN|ĐƠN VỊ|CHỦ TỊCH|KẾ TOÁN|THƯ KÝ|QUẢN LÝ|KIỂM SOÁT/;
+const NAME_RE = /^\p{Lu}\p{Ll}+(?:\s+\p{Lu}\p{Ll}+){1,4}$/u;
+const isPersonName = v => { const t = v.trim(); return NAME_RE.test(t) && !NOT_NAME.test(t.toUpperCase()); };
+
+function redact(text) {
+  const counts = { email:0, bimat:0, lienket:0, ip:0, sdt:0, dinhdanh:0, hoten:0 };
+  const bump = k => { counts[k]++; };
+  let t = text;
+  t = t.replace(/[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}/g, () => (bump("email"), "[EMAIL]"));
+  t = t.replace(/((?:mật\s*khẩu|password|passwd|pwd|api[\s_-]?key|secret|token)\s*[:=]\s*)(\S+)/gi, (m, a) => (bump("bimat"), a + "[BÍ MẬT]"));
+  t = t.replace(/\b(?:AIza[0-9A-Za-z_\-]{30,}|sk-[A-Za-z0-9_\-]{20,})\b/g, () => (bump("bimat"), "[BÍ MẬT]"));
+  t = t.replace(/https?:\/\/[^\s)>\]]+/gi, () => (bump("lienket"), "[LIÊN KẾT]"));
+  t = t.replace(/\b\d{1,3}(?:\.\d{1,3}){3}\b/g, () => (bump("ip"), "[IP]"));
+  t = t.replace(/(^|[^\d])(\d{10}-\d{3})(?!\d)/g, (m, a) => (bump("dinhdanh"), a + "[SỐ ĐỊNH DANH]"));
+  t = t.replace(/(^|[^\d])((?:\+?84|0)[\s.\-]?\d{2,3}[\s.\-]?\d{3}[\s.\-]?\d{3,4})(?!\d)/g, (m, a) => (bump("sdt"), a + "[SĐT]"));
+  t = t.replace(/(^|[^\d])(\d{9,19})(?!\d)/g, (m, a) => (bump("dinhdanh"), a + "[SỐ ĐỊNH DANH]"));
+  // Họ tên: chỉ che khi đi kèm nhãn hoặc danh xưng, tránh che nhầm chức danh/đơn vị
+  t = t.replace(/((?:Họ\s*(?:và\s*)?tên|Người\s+(?:soạn\s+thảo|kiểm\s+tra|thẩm\s+định|phê\s+duyệt|ký)|Ký\s*tên|Chữ\s*ký)\s*[:\-–]\s*)([^\n|;]{2,60})/gi,
+    (m, a, v) => isPersonName(v) ? (bump("hoten"), a + "[HỌ TÊN]") : m);
+  t = t.replace(/(^|[^\p{L}])((?:Ông|Bà|Anh|Chị)\s+)(\p{Lu}\p{Ll}+(?:\s+\p{Lu}\p{Ll}+){1,3})/gu,
+    (m, p, a, v) => isPersonName(v) ? (bump("hoten"), p + a + "[HỌ TÊN]") : m);
+  const total = Object.values(counts).reduce((x, y) => x + y, 0);
+  return { text:t, counts, total };
+}
+const REDACT_LABEL = { email:"email", bimat:"mật khẩu/khóa", lienket:"liên kết", ip:"địa chỉ IP", sdt:"số điện thoại", dinhdanh:"số định danh/tài khoản", hoten:"họ tên" };
+function redactSummary(counts) {
+  const parts = Object.entries(counts).filter(([, n]) => n > 0).map(([k, n]) => `${n} ${REDACT_LABEL[k]}`);
+  return parts.length ? parts.join(", ") : "";
+}
+
+// ── Chi tiết AI gắn vào từng dòng checklist ──────────
+function aiLines(c, id) {
+  const r = c.ai[id];
+  if (!r) return null;
+  const lines = r.split("\n").map(s => s.trim()).filter(s => /^Bước\s*\d+/i.test(s) || /CẢNH BÁO/.test(s));
+  return lines.length ? lines : null;
+}
+function riskKpiPart(c, which) {
+  const r = c.ai.risk_kpi;
+  if (!r || /^(❌|⚠)/.test(r)) return null;
+  const body = r.replace(/^\s*KẾT LUẬN:[^\n]*\n?/i, "");
+  const idx = body.search(/^\s*(\*\*)?B\.\s*RỦI RO/im);
+  const part = which === "A" ? (idx >= 0 ? body.slice(0, idx) : body) : (idx >= 0 ? body.slice(idx) : "");
+  const lines = part.split("\n").map(s => s.replace(/\*\*/g, "").trim()).filter(Boolean);
+  return lines.length ? lines : null;
+}
+const DETAILS = {
+  "II.7":  c => aiLines(c, "content_step_name"),
+  "II.8":  c => aiLines(c, "content_5elements"),
+  "II.11": c => riskKpiPart(c, "A"),
+  "II.12": c => riskKpiPart(c, "B")
+};
+
+// ── Hàm hỗ trợ đánh giá ──────────────────────────────
+function shortLabel(r){ return r.label.replace(/^\s*└\s*/,"").replace(/\s*\(.*?\)\s*$/,"").trim(); }
+
+function evalStruct(c, ids){
+  const rs  = ids.map(id => c.S[id]).filter(Boolean);
+  const pick = s => rs.filter(r => r.status === s).map(shortLabel);
+  const miss = pick("missing"), emp = pick("empty"), ord = pick("wrong_order");
+  if (miss.length) return { st:"fail",   basis:"Cấu trúc", note:"Thiếu: " + miss.join("; ") + "." };
+  if (emp.length)  return { st:"fail",   basis:"Cấu trúc", note:"Có tiêu đề nhưng chưa có nội dung: " + emp.join("; ") + "." };
+  if (ord.length)  return { st:"review", basis:"Cấu trúc", note:"Công cụ ghi nhận xuất hiện trước vị trí quy định: " + ord.join("; ") + ". Cần kiểm tra thủ công." };
+  const multi = rs.filter(r => r.count > 1).map(r => `${shortLabel(r)} (${r.count} lần)`);
+  return { st:"pass", basis:"Cấu trúc", note: multi.length ? "Xuất hiện nhiều lần: " + multi.join("; ") + "." : "" };
+}
+
+const DATE_RE = /(\d{1,2})\s*[\/\-.]\s*(\d{1,2})\s*[\/\-.]\s*(\d{4})/;
+function findDateAfter(upper, kwSrc){
+  const re = new RegExp(kwSrc, "g"); let m;
+  while ((m = re.exec(upper))) {
+    const d = upper.slice(m.index + m[0].length, m.index + m[0].length + 80).match(DATE_RE);
+    if (d) return d[0].replace(/\s+/g, "");
+  }
+  return null;
+}
+
+function stepErrors(c, id){
+  const r = c.ai[id];
+  if (r === undefined) return { state:"pending" };
+  if (/^(❌|⚠)/.test(r)) return { state:"err" };
+  const n = (r.match(/^\s*Bước\s*\d+/gim) || []).length;
+  if (n > 0) return { state:"errs", n };
+  if (/KHÔNG CÓ LỖI/i.test(r)) return { state:"clean" };
+  return { state:"unknown" };
+}
+
+function kpiRiskVerdict(c){
+  const r = c.ai.risk_kpi;
+  if (r === undefined) return { state:"pending" };
+  if (/^(❌|⚠)/.test(r)) return { state:"err" };
+  const m = r.match(/KẾT LUẬN:\s*KPI\s*=\s*([^;\n]+?)\s*;\s*RỦI RO\s*=\s*([^\n]+)/i);
+  if (!m) return { state:"none" };
+  const norm = s => /CẦN SỬA/i.test(s) ? "fix" : /KHÔNG CÓ/i.test(s) ? "empty" : /ĐẠT/i.test(s) ? "ok" : "?";
+  return { state:"ok", kpi:norm(m[1]), risk:norm(m[2]) };
+}
+
+const SEE_AI = "Xem chi tiết bên dưới.";
+
+// ── Quy tắc đánh giá từng dòng của checklist ─────────
+// Chỉ đánh giá tự động phần công cụ kiểm chứng được; phần còn lại để "Chờ thẩm định".
+const EVAL = {
+  "I.1": c => {
+    const m = c.text.match(/QT\.VTG\.[A-Z0-9]{1,8}\.[A-Z0-9]{1,6}/i);
+    if (!m) return { st:"fail", basis:"Quy tắc", note:"Không thấy mã hiệu theo cấu trúc QT.VTG.ZZ.XX." };
+    const code = m[0].toUpperCase();
+    if (/^QT\.VTG\.XX\.XX$/.test(code) || code.endsWith(".XX"))
+      return { st:"review", basis:"Quy tắc", note:`Mã hiệu ${code} còn ký hiệu XX, chưa hoàn thiện.` };
+    return { st:"pass", basis:"Quy tắc", note:`Mã hiệu ${code} đúng cấu trúc. Chưa đối chiếu trùng lặp.` };
+  },
+  "I.2": c => {
+    const d = findDateAfter(c.upper, "NGÀY (CÓ )?HIỆU LỰC");
+    return d
+      ? { st:"review", basis:"Quy tắc", note:`Ngày ghi: ${d}. Cần đối chiếu với ngày ban hành.` }
+      : { st:"review", basis:"Quy tắc", note:"Không đọc được ngày hiệu lực dạng dd/mm/yyyy. Kiểm tra thủ công." };
+  },
+  "I.3": c => {
+    const d = findDateAfter(c.upper, "HẾT HIỆU LỰC");
+    return d
+      ? { st:"fail", basis:"Quy tắc", note:`Có ghi ngày hết hiệu lực (${d}); quy định không được ghi.` }
+      : { st:"pass", basis:"Quy tắc", note:"Không phát hiện ngày hết hiệu lực." };
+  },
+  "I.4": c => {
+    const m = c.upper.match(/LẦN BAN HÀNH[^\d\n]{0,30}(\d{1,2})/);
+    return m
+      ? { st:"review", basis:"Quy tắc", note:`Lần ban hành ghi: ${m[1]}. Cần đối chiếu với số dòng trong Bảng theo dõi sửa đổi.` }
+      : { st:"review", basis:"Quy tắc", note:"Không đọc được số lần ban hành. Kiểm tra thủ công." };
+  },
+  "I.5": c => {
+    const b = evalStruct(c, ["bm_sde"]);
+    return b.st === "pass"
+      ? { st:"review", basis:"Cấu trúc", note:"Có Bảng theo dõi sửa đổi. Cần soát tính đầy đủ: nội dung tóm tắt và ngày bắt đầu hiệu lực." }
+      : b;
+  },
+  "I.6": c => {
+    const cover = c.upper.slice(0, 8000);
+    const roles = [["Soạn thảo", /SOẠN THẢO|BIÊN SOẠN/], ["Kiểm tra", /KIỂM TRA/], ["Thẩm định", /THẨM ĐỊNH/], ["Phê duyệt", /PHÊ DUYỆT/]];
+    const miss = roles.filter(r => !r[1].test(cover)).map(r => r[0]);
+    return miss.length
+      ? { st:"fail", basis:"Quy tắc", note:"Chân ký chưa thấy: " + miss.join(", ") + "." }
+      : { st:"pass", basis:"Quy tắc", note:"Đủ 4 thành phần chân ký. Chưa kiểm tra họ tên, chữ ký." };
+  },
+  "I.7":  c => evalStruct(c, ["tt_header","tt_pham_vi","tt_hdchinh","tt_vaitro"]),
+
+  "II.1": c => evalStruct(c, ["nd_mucdich"]),
+  "II.2": c => evalStruct(c, ["nd_phamvi"]),
+  "II.3": c => evalStruct(c, ["nd_tailieu"]),
+  "II.4": c => evalStruct(c, ["nd_thuatngu","nd_tn_kn","nd_viet_tat"]),
+  "II.5": c => evalStruct(c, ["nd_sk"]),
+  "II.6": c => evalStruct(c, ["nd_io"]),
+  "II.7": c => {
+    const b = evalStruct(c, ["nd_luudo"]);
+    if (b.st === "fail") return b;
+    const e = stepErrors(c, "content_step_name");
+    if (e.state === "errs")
+      return { st:"fail", basis:"Cấu trúc + AI", note:`AI: ${e.n} tên bước chưa đúng cú pháp động từ + tân ngữ. Lưu đồ dạng hình ảnh chưa kiểm tra được.` };
+    const base = "Lưu đồ là hình ảnh nên công cụ không đọc được ký hiệu BPMN và số thứ tự; cần thẩm định thủ công.";
+    if (e.state === "clean") return { st:"review", basis:"Cấu trúc + AI", note:"Tên các bước đúng cú pháp động từ + tân ngữ. " + base };
+    if (e.state === "pending") return { st:"review", basis:"Cấu trúc + AI", note: base + " Đang chờ AI kiểm tra tên bước." };
+    return { st:"review", basis:"Cấu trúc", note: base };
+  },
+  "II.8": c => {
+    const b = evalStruct(c, ["nd_thuyetminh"]);
+    if (b.st !== "pass") return b;
+    const e = stepErrors(c, "content_5elements");
+    if (e.state === "pending") return { st:"pending", basis:"Cấu trúc + AI", note:"Có mục Thuyết minh. Đang chờ AI kiểm tra 5 yếu tố." };
+    if (e.state === "errs")    return { st:"fail", basis:"Cấu trúc + AI", note:`AI: ${e.n} bước thiếu hoặc chưa rõ yếu tố. Chưa kiểm tra cột Công cụ, Thời gian.` };
+    if (e.state === "clean")   return { st:"pass", basis:"Cấu trúc + AI", note:"AI không phát hiện bước thiếu 5 yếu tố. Chưa kiểm tra cột Công cụ, Thời gian." };
+    return { st:"review", basis:"Cấu trúc + AI", note:"AI chưa trả kết quả đọc được. Xem chi tiết bên dưới." };
+  },
+  "II.9":  c => evalStruct(c, ["nd_rasci"]),
+  "II.10": c => evalStruct(c, ["nd_anhxa"]),
+  "II.11": c => {
+    const b = evalStruct(c, ["nd_kpi"]);
+    if (b.st !== "pass") return b;
+    const v = kpiRiskVerdict(c);
+    if (v.state === "pending") return { st:"pending", basis:"Cấu trúc + AI", note:"Có mục KPI. Đang chờ AI đánh giá." };
+    if (v.state !== "ok")      return { st:"review", basis:"Cấu trúc + AI", note:"AI chưa trả kết luận KPI. " + SEE_AI };
+    if (v.kpi === "fix")       return { st:"fail", basis:"Cấu trúc + AI", note:"AI nêu KPI cần điều chỉnh. " + SEE_AI };
+    if (v.kpi === "empty")     return { st:"fail", basis:"Cấu trúc + AI", note:"Mục KPI chưa có nội dung (mục bắt buộc)." };
+    if (v.kpi === "ok")        return { st:"pass", basis:"Cấu trúc + AI", note:"AI không nêu KPI cần điều chỉnh." };
+    return { st:"review", basis:"Cấu trúc + AI", note:"AI chưa trả kết luận KPI. " + SEE_AI };
+  },
+  "II.12": c => {
+    const b = evalStruct(c, ["nd_ruiro"]);
+    if (b.st !== "pass") return b;
+    const v = kpiRiskVerdict(c);
+    if (v.state === "pending") return { st:"pending", basis:"Cấu trúc + AI", note:"Có mục Rủi ro. Đang chờ AI đánh giá." };
+    if (v.state !== "ok")      return { st:"review", basis:"Cấu trúc + AI", note:"AI chưa trả kết luận rủi ro. " + SEE_AI };
+    if (v.risk === "fix")      return { st:"fail", basis:"Cấu trúc + AI", note:"AI nêu rủi ro cần điều chỉnh. " + SEE_AI };
+    if (v.risk === "empty")    return { st:"pass", basis:"Cấu trúc + AI", note:"Mục ghi KHÔNG CÓ (mục tùy chọn)." };
+    if (v.risk === "ok")       return { st:"pass", basis:"Cấu trúc + AI", note:"AI không nêu rủi ro cần điều chỉnh." };
+    return { st:"review", basis:"Cấu trúc + AI", note:"AI chưa trả kết luận rủi ro. " + SEE_AI };
+  },
+  "II.13": c => evalStruct(c, ["nd_ngoaile"]),
+  "II.14": c => evalStruct(c, ["nd_dkien"]),
+  "II.15": c => evalStruct(c, ["nd_bieumau","nd_hosoluU"])
+};
+
+
+// ══════════════════════════════════════════════════════
+// BIỂU MẪU 3 — THẨM ĐỊNH PHÁP LÝ (quy tắc, không dùng AI)
+// ══════════════════════════════════════════════════════
+const LEGAL_RE = /(Luật|Nghị định|Thông tư|Nghị quyết|Pháp lệnh)\s+(?:số\s+)?[^\n;]{3,90}/gi;
+
+function taiLieuText(c) {
+  const r = c.S.nd_tailieu;
+  if (!r || r.pos < 0) return null;
+  const ends = ["nd_thuatngu","nd_ranhgioi"].map(id => c.S[id]).filter(x => x && x.pos > r.pos).map(x => x.pos);
+  return c.text.slice(r.pos, ends.length ? Math.min(...ends) : r.pos + 4000);
+}
+function legalRefs(c) {
+  const t = taiLieuText(c);
+  if (t === null) return null;
+  const seen = new Set(), out = [];
+  for (const m of t.matchAll(LEGAL_RE)) {
+    const line = m[0].replace(/\s+/g, " ").trim().slice(0, 110);
+    if (!seen.has(line.toLowerCase())) { seen.add(line.toLowerCase()); out.push(line); }
+  }
+  return out;
+}
+const VAGUE_RE = /(?:theo|đúng|tuân thủ|căn cứ|thực hiện)\s+(?:đúng\s+)?(?:các\s+)?quy định\s+(?:của\s+)?(?:pháp luật|nhà nước)/gi;
+function vagueRefs(c) {
+  const t = extract62(c.text);
+  if (!t) return null;
+  return [...t.matchAll(VAGUE_RE)].map(m => {
+    const a = Math.max(0, m.index - 50), b = Math.min(t.length, m.index + m[0].length + 30);
+    return "…" + t.slice(a, b).replace(/\s+/g, " ").trim() + "…";
   });
-});
-
-// ══════════════════════════════════════════════════════
-// KIỂM TRA KẾT NỐI SERVER (không cần key — server tự giữ key)
-// ══════════════════════════════════════════════════════
-async function testServer() {
-  const dot   = document.getElementById("conn-dot");
-  const text  = document.getElementById("conn-text");
-
-  text.textContent = "Đang kiểm tra…";
-  dot.className = "dot";
-
-  try {
-    const r = await fetch("/api/ping", { signal: makeAbortSignal(15000) });
-    const data = await r.json();
-    if (r.ok && data.ready) {
-      dot.className = "dot on";
-      text.textContent = "Hệ thống sẵn sàng ✓";
-      showToast("✅ Kết nối hệ thống thành công");
-      document.getElementById("btn-check").disabled = !fileContent;
-    } else {
-      dot.className = "dot off";
-      text.textContent = "Server chưa cấu hình key";
-      showToast("❌ Server chưa có GEMINI_API_KEY — liên hệ quản trị viên");
-    }
-  } catch(e) {
-    dot.className = "dot off";
-    text.textContent = "Không kết nối được server";
-    showToast("❌ Lỗi kết nối: " + e.message);
-  }
 }
 
-// ══════════════════════════════════════════════════════
-// FILE UPLOAD
-// ══════════════════════════════════════════════════════
-const dropZone   = document.getElementById("drop-zone");
-const fileInput  = document.getElementById("file-input");
-const fileNameEl = document.getElementById("file-name");
-const btnCheck   = document.getElementById("btn-check");
-
-dropZone.addEventListener("dragover", e => { e.preventDefault(); dropZone.classList.add("drag-over"); });
-dropZone.addEventListener("dragleave", () => dropZone.classList.remove("drag-over"));
-dropZone.addEventListener("drop", e => { e.preventDefault(); dropZone.classList.remove("drag-over"); if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
-fileInput.addEventListener("change", () => { if(fileInput.files[0]) handleFile(fileInput.files[0]); });
-
-async function handleFile(f) {
-  const ext = f.name.split(".").pop().toLowerCase();
-  if (!["docx","pdf"].includes(ext)) { showToast("❌ Chỉ hỗ trợ .docx và .pdf"); return; }
-  if (f.size > 20*1024*1024) { showToast("❌ File vượt quá 20MB"); return; }
-  fileNameEl.textContent = "⏳ Đang đọc file…";
-  fileName = f.name;
-  try {
-    fileContent = ext === "docx" ? await readDocx(f) : await readPdf(f);
-    fileNameEl.textContent = `✅ ${f.name} (${Math.round(f.size/1024)} KB — ${fileContent.length} ký tự trích xuất)`;
-    if (document.getElementById("conn-dot").classList.contains("on")) {
-      btnCheck.disabled = false;
-    } else {
-      showToast("⚠️ File đã tải. Nhớ kiểm tra kết nối hệ thống trước khi chạy.");
-    }
-  } catch(e) {
-    fileNameEl.textContent = `❌ Lỗi đọc file: ${e.message}`;
+const EVAL3 = {
+  "I.1": c => {
+    const refs = legalRefs(c);
+    if (refs === null) return { st:"fail", basis:"Quy tắc", note:"Thiếu mục Tài liệu liên quan nên chưa có danh mục văn bản pháp luật." };
+    const mapped = /ÁNH XẠ[^\n]{0,40}(PHÁP LUẬT|YC PL|YÊU CẦU)|BANG ANH XA/.test(c.upper);
+    const mapNote = mapped ? "" : " Văn bản chưa nhắc Bảng ánh xạ yêu cầu pháp luật.";
+    return refs.length
+      ? { st:"review", basis:"Quy tắc", note:`Tìm thấy ${refs.length} văn bản (Luật, Nghị định, Thông tư…) tại Tài liệu liên quan. Cần thẩm định đã đầy đủ chưa.${mapNote}` }
+      : { st:"review", basis:"Quy tắc", note:`Tài liệu liên quan chưa thấy Luật, Nghị định, Thông tư… nào. Cần thẩm định quy trình có văn bản pháp luật chuyên ngành áp dụng hay không.${mapNote}` };
+  },
+  "I.2": c => {
+    const refs = legalRefs(c);
+    return refs && refs.length
+      ? { st:"review", basis:"Thủ công", note:`Cần tra cứu hiệu lực của ${refs.length} văn bản tại thời điểm thẩm định và các nội dung sửa đổi, bổ sung, thay thế.` }
+      : { st:"review", basis:"Thủ công", note:"Cần tra cứu hiệu lực các văn bản pháp luật được dẫn chiếu. Công cụ không có cơ sở dữ liệu pháp luật." };
+  },
+  "II.1": c => /ÁNH XẠ[^\n]{0,40}(PHÁP LUẬT|YC PL|YÊU CẦU)|BANG ANH XA/.test(c.upper)
+    ? { st:"review", basis:"Quy tắc", note:"Có nhắc Bảng ánh xạ yêu cầu pháp luật. Bảng là sheet riêng gửi kèm dự thảo nên công cụ không kiểm tra được mức bao quát." }
+    : { st:"review", basis:"Quy tắc", note:"Văn bản không nhắc Bảng ánh xạ yêu cầu pháp luật. Cần kiểm tra bảng có gửi kèm dự thảo không." },
+  "II.2": c => {
+    const v = vagueRefs(c);
+    if (v === null) return { st:"review", basis:"Quy tắc", note:"Không tìm thấy phần Thuyết minh để kiểm tra." };
+    if (v.length) return { st:"fail", basis:"Quy tắc", note:`${v.length} chỗ trong Thuyết minh chỉ dẫn chiếu chung chung "theo quy định của pháp luật".` };
+    return { st:"review", basis:"Quy tắc", note:"Không phát hiện cụm dẫn chiếu chung chung. Cần thẩm định mỗi yêu cầu bắt buộc đã thành bước cụ thể." };
+  },
+  "II.3": c => {
+    const b = evalStruct(c, ["nd_rasci"]);
+    return b.st === "pass"
+      ? { st:"review", basis:"Cấu trúc", note:"Có ma trận RASCI. Cần đối chiếu từng yêu cầu bắt buộc có chủ thể R và A." }
+      : b;
   }
-}
+};
+const DETAILS3 = {
+  "I.2": c => { const r = legalRefs(c); return r && r.length ? r : null; },
+  "II.2": c => { const v = vagueRefs(c); return v && v.length ? v : null; }
+};
+const DETAIL_TITLE = { "BM3.I.2":"Văn bản pháp luật cần tra cứu hiệu lực", "BM3.II.2":"Vị trí dẫn chiếu chung chung" };
+const EVAL_BY = { BM3:EVAL3, BM4:EVAL };
+const DETAILS_BY = { BM3:DETAILS3, BM4:DETAILS };
+const lk = r => r.sec + "." + r.n;
 
 async function readDocx(f) {
   const ab = await f.arrayBuffer();
@@ -527,39 +1031,6 @@ async function readPdf(f) {
   return text;
 }
 
-// ══════════════════════════════════════════════════════
-// PROGRESS
-// ══════════════════════════════════════════════════════
-const progWrap  = document.getElementById("progress-wrap");
-const progFill  = document.getElementById("prog-fill");
-const progSteps = document.getElementById("prog-steps");
-let steps = [];
-
-function initProgress(labels) {
-  steps = labels.map((l,i) => ({ label:l, id:"ps_"+i, state:"pending" }));
-  progSteps.innerHTML = steps.map(s =>
-    `<div class="prog-step" id="${s.id}"><span class="s-icon">○</span>${s.label}</div>`
-  ).join("");
-  progFill.style.width = "0%";
-  progWrap.style.display = "block";
-}
-
-function setStep(idx, state) {
-  if (!steps[idx]) return;
-  steps[idx].state = state;
-  const el = document.getElementById(steps[idx].id);
-  el.className = "prog-step " + (state==="done"?"done":state==="active"?"active":state==="error"?"error":"");
-  el.querySelector(".s-icon").textContent = {done:"✓",active:"◉",error:"✗",pending:"○"}[state]||"○";
-  const done = steps.filter(s=>s.state==="done").length;
-  progFill.style.width = Math.round((done/steps.length)*100)+"%";
-}
-
-// ══════════════════════════════════════════════════════
-// TẦNG 1 — STRUCTURE CHECK
-// ══════════════════════════════════════════════════════
-// ══════════════════════════════════════════════════════
-// TẦNG 1 — KIỂM TRA CẤU TRÚC + THỨ TỰ
-// ══════════════════════════════════════════════════════
 function checkStructure(text) {
   const upper = text.toUpperCase();
 
@@ -633,10 +1104,6 @@ function checkStructure(text) {
   return results;
 }
 
-// ══════════════════════════════════════════════════════
-// TRÍCH XUẤT TẤT CẢ CÁC MỤC THUYẾT MINH / DIỄN GIẢI
-// Xử lý trường hợp quy trình có nhiều hơn 1 mục
-// ══════════════════════════════════════════════════════
 function extractAllSections(text) {
   const lines = text.split("\n");
 
@@ -712,9 +1179,6 @@ function extract62(text) {
   ).join("\n\n");
 }
 
-// ══════════════════════════════════════════════════════
-// TẦNG 2 — Gọi qua backend /api/check (key giữ trên server)
-// ══════════════════════════════════════════════════════
 async function callGemini(systemPrompt, inputContent, retries = 3) {
   const model = selectedModel;
   const fullPrompt = systemPrompt + "\n" + inputContent;
@@ -767,223 +1231,494 @@ async function callGemini(systemPrompt, inputContent, retries = 3) {
 }
 
 // ══════════════════════════════════════════════════════
-// MAIN FLOW
+// STATE
 // ══════════════════════════════════════════════════════
-btnCheck.addEventListener("click", async () => {
-  if (!fileContent) return;
-  btnCheck.disabled = true;
-  document.getElementById("results").style.display = "none";
-  reportText = "";
+const $ = s => document.querySelector(s);
+let fileContent = "", fileName = "", fileSize = 0;
+let serverReady = false, running = false;
+let selectedModel = "gemini-2.5-flash-lite";
+let ctx = null, clRan = false, clRows = [], clUser = {}, clFilter = "all", activeForm = "BM3";
+let struct = [], aiDone = [], clDirty = false, lastRunAt = null, redactInfo = null;
+const openSet = new Set(), touched = new Set(), srcOpen = new Set();
 
-  // Task II.4 cần toàn bộ nội dung (bao gồm 6.4, 6.5)
-  // Các Task I và II.1-3 chỉ cần mục 6.2
-  const stepLabels = [
-    "Đọc nội dung tài liệu",
-    "Kiểm tra cấu trúc 25 mục bắt buộc",
-    "Trích xuất nội dung phân tích",
-    ...AI_CHECKS.map(c => `${c.icon} ${c.label}`),
-    "Tổng hợp kết quả"
-  ];
-  initProgress(stepLabels);
-
-  try {
-    setStep(0,"active"); await sleep(300); setStep(0,"done");
-
-    setStep(1,"active");
-    const structResults = checkStructure(fileContent);
-    await sleep(200); setStep(1,"done");
-
-    setStep(2,"active");
-    const content62   = extract62(fileContent);
-    const sectionCount = extractAllSections(fileContent).length;
-    await sleep(200); setStep(2,"done");
-    if (sectionCount === 0) showToast("⚠️ Không tìm thấy mục Thuyết minh/Diễn giải — kiểm tra lại file");
-    else if (sectionCount > 1) showToast(`ℹ️ Tìm thấy ${sectionCount} mục Thuyết minh/Diễn giải — ghép lại để phân tích`);
-
-    // Hiển thị Tầng 1 ngay sau khi check xong, không đợi AI
-    renderStructure(structResults);
-
-    const aiResults = [];
-    for (let i = 0; i < AI_CHECKS.length; i++) {
-      const si = 3 + i;
-      setStep(si,"active");
-      if (i > 0) await sleep(8000);
-      try {
-        const inputContent = AI_CHECKS[i].id === "risk_kpi" ? fileContent : content62;
-        const noContent    = AI_CHECKS[i].id === "risk_kpi" ? !fileContent : !content62;
-
-        const res = noContent
-          ? "⚠️ Không tìm thấy nội dung phù hợp trong tài liệu"
-          : await callGemini(AI_CHECKS[i].prompt, inputContent);
-        aiResults.push({ ...AI_CHECKS[i], result: res });
-        setStep(si,"done");
-        // Hiển thị kết quả Task này ngay lập tức, không đợi Task sau
-        renderAITask(AI_CHECKS[i], res);
-      } catch(e) {
-        const errResult = `❌ Lỗi Gemini: ${e.message}`;
-        aiResults.push({ ...AI_CHECKS[i], result: errResult });
-        setStep(si,"error");
-        renderAITask(AI_CHECKS[i], errResult);
-      }
-    }
-
-    const li = stepLabels.length - 1;
-    setStep(li,"active"); await sleep(200); setStep(li,"done");
-    finalizeReport(structResults, aiResults);
-  } catch(e) {
-    showToast("❌ Lỗi hệ thống: " + e.message);
-  } finally {
-    btnCheck.disabled = false;
-  }
-});
-
-// ══════════════════════════════════════════════════════
-// RENDER — Tầng 1 (hiển thị ngay sau khi check cấu trúc)
-// ══════════════════════════════════════════════════════
-function renderStructure(structRes) {
-  const ok    = structRes.filter(r=>r.status==="ok").length;
-  const empty = structRes.filter(r=>r.status==="empty").length;
-  const miss  = structRes.filter(r=>r.status==="missing").length;
-  const order = structRes.filter(r=>r.status==="wrong_order").length;
-
-  reportText  = `VTG COMPLIANCE CHECKER — Báo cáo kiểm tra tuân thủ\n`;
-  reportText += `Tài liệu: ${fileName}\n`;
-  reportText += `Model AI: ${selectedModel}\n`;
-  reportText += `Thời điểm: ${new Date().toLocaleString("vi-VN")}\n`;
-  reportText += "=".repeat(60)+"\n\n";
-  reportText += `CẤU TRÚC: ĐỦ ${ok} | TRỐNG ${empty} | SAI THỨ TỰ ${order} | THIẾU ${miss}\n\n`;
-
-  let html = `<div class="summary-bar">
-    <div class="sum-box pass"><div class="num">${ok}</div><div class="lbl">✅ Đủ & đúng thứ tự</div></div>
-    <div class="sum-box warn"><div class="num">${empty}</div><div class="lbl">⚠️ Có tiêu đề nhưng trống</div></div>
-    <div class="sum-box" style="background:#fff3cd;border-color:#ffc107"><div class="num" style="color:#856404">${order}</div><div class="lbl">🔀 Sai thứ tự</div></div>
-    <div class="sum-box fail"><div class="num">${miss}</div><div class="lbl">❌ Thiếu hoàn toàn</div></div>
-  </div>`;
-
-  html += `<div class="section-label">TẦNG 1 — Cấu trúc mục bắt buộc</div>`;
-  html += `<table class="check-table"><thead><tr><th>#</th><th>Mục cấu trúc</th><th>Nhóm</th><th>Trạng thái</th><th>Ghi chú</th></tr></thead><tbody>`;
-  reportText += "TẦNG 1 — CẤU TRÚC\n"+"-".repeat(40)+"\n";
-  let lastGroup = "";
-  structRes.forEach((r,i) => {
-    const badge = r.status==="ok"
-      ? `<span class="badge ok">✅ ĐỦ</span>`
-      : r.status==="empty"
-        ? `<span class="badge emp">⚠️ TRỐNG</span>`
-        : r.status==="wrong_order"
-          ? `<span class="badge" style="background:#fff3cd;color:#856404">🔀 SAI THỨ TỰ</span>`
-          : `<span class="badge mis">❌ THIẾU</span>`;
-    const statusLabel = r.status==="ok"?"ĐỦ":r.status==="empty"?"TRỐNG":r.status==="wrong_order"?"SAI THỨ TỰ":"THIẾU";
-    const grp = r.group !== lastGroup ? r.group : ""; lastGroup = r.group;
-    let noteHtml = "", noteText = "";
-    if (r.status === "wrong_order") {
-      noteHtml = `<span style="color:#9B1000;font-size:11px;font-weight:600">⚠️ Xuất hiện trước vị trí quy định</span>`;
-      noteText = "Xuất hiện trước vị trí quy định";
-    } else if (r.count > 1) {
-      noteHtml = `<span style="color:#7A4A00;font-size:11px;font-weight:600">ℹ️ Xuất hiện ${r.count} lần — quy trình có ${r.count} mục con</span>`;
-      noteText = `Xuất hiện ${r.count} lần`;
-    }
-    html += `<tr>
-      <td style="color:var(--ink-2);font-size:11px">${i+1}</td>
-      <td>${r.label}</td>
-      <td style="font-size:11px;color:var(--ink-2)">${grp}</td>
-      <td>${badge}</td>
-      <td>${noteHtml}</td>
-    </tr>`;
-    reportText += `  [${statusLabel}]${noteText?` [${noteText}]`:""} ${r.label}\n`;
-  });
-  html += "</tbody></table>";
-
-  // Header cho Tầng 2 — placeholder, sẽ điền dần
-  html += `<div id="t2-task1-header" class="section-label" style="margin-top:24px;color:var(--red);border-top:2px solid var(--red)">
-    TẦNG 2 — TASK I: THẨM ĐỊNH NỘI DUNG & LOGIC
-  </div>`;
-  html += `<div id="ai-tasks-container"></div>`;
-  html += `<div id="t2-task2-header" style="display:none" class="section-label" style="margin-top:28px;color:#1A4FA0;border-top:2px solid #1A4FA0">
-    TẦNG 2 — TASK II: KHUYẾN NGHỊ CHUYÊN GIA & CẢI TIẾN
-  </div>`;
-
-  const rb = document.getElementById("results-body");
-  rb.innerHTML = html;
-  document.getElementById("results").style.display = "block";
-  document.getElementById("results").scrollIntoView({ behavior:"smooth", block:"start" });
-}
-
-// ══════════════════════════════════════════════════════
-// RENDER — Từng Task AI (hiển thị ngay khi Task xong)
-// ══════════════════════════════════════════════════════
-function renderAITask(check, result) {
-  const container = document.getElementById("ai-tasks-container");
-  if (!container) return;
-
-  // Hiển thị header Task II khi bắt đầu Task II đầu tiên
-  if (check.task === "II") {
-    const existing = document.getElementById("t2-task2-injected");
-    if (!existing) {
-      const h2 = document.createElement("div");
-      h2.id = "t2-task2-injected";
-      h2.className = "section-label";
-      h2.style.cssText = "margin-top:28px;color:#1A4FA0;border-top:2px solid #1A4FA0";
-      h2.textContent = "TẦNG 2 — TASK II: KHUYẾN NGHỊ CHUYÊN GIA & CẢI TIẾN";
-      container.parentNode.insertBefore(h2, container);
-    }
-  }
-
-  const isOk  = result.toUpperCase().includes("KHÔNG CÓ LỖI") || result.toUpperCase().includes("KHÔNG CÓ ĐỀ XUẤT");
-  const isErr = result.startsWith("⚠️") || result.startsWith("❌");
-  const isTask2 = check.task === "II";
-
-  const block = document.createElement("div");
-  block.className = "ai-block";
-  if (isTask2) block.style.borderColor = "#c5d5f0";
-
-  block.innerHTML = `
-    <div class="ai-block-head" ${isTask2?'style="background:#f0f4fc"':''}>
-      ${check.icon} ${check.label}
-      <span class="gemini-tag" style="margin-left:auto">✦ ${selectedModel}</span>
-    </div>
-    <div class="ai-block-body ${isOk?"ok-text":isErr?"warn-text":""}">${escHtml(result)}</div>
-  `;
-  container.appendChild(block);
-
-  // Cuộn xuống để thấy kết quả mới
-  block.scrollIntoView({ behavior:"smooth", block:"nearest" });
-
-  reportText += `\n[${check.label}]\n${result}\n`;
-}
-
-// ══════════════════════════════════════════════════════
-// FINALIZE — Cập nhật nút export sau khi xong tất cả
-// ══════════════════════════════════════════════════════
-function finalizeReport(structRes, aiRes) {
-  // Không cần render lại — đã render từng phần
-  // Chỉ enable export button
-  showToast("✅ Kiểm tra hoàn tất");
-}
-
-// ══════════════════════════════════════════════════════
-// EXPORT
-// ══════════════════════════════════════════════════════
-document.getElementById("btn-export").addEventListener("click", () => {
-  if (!reportText) { showToast("Chưa có kết quả"); return; }
-  const blob = new Blob([reportText], { type:"text/plain;charset=utf-8" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = `VTG_Compliance_${fileName.replace(/\.[^.]+$/,"")}_${Date.now()}.txt`;
-  a.click();
-  showToast("✅ Đã xuất báo cáo");
-});
-
-// ══════════════════════════════════════════════════════
-// UTILS
-// ══════════════════════════════════════════════════════
 function showToast(msg) {
-  const t = document.getElementById("toast");
-  t.textContent = msg;
-  t.classList.add("show");
-  setTimeout(() => t.classList.remove("show"), 3500);
+  const t = $("#toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(showToast._t); showToast._t = setTimeout(() => t.classList.remove("show"), 4200);
 }
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-function escHtml(s) { return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function escHtml(s) { return String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+const esc = escHtml;
+
+// ══════════════════════════════════════════════════════
+// KẾT NỐI HỆ THỐNG — tự kiểm tra, không cần bấm
+// ══════════════════════════════════════════════════════
+let connFails = 0, connTimer = null, connBusy = null;
+function setConn(kind, text) { $("#conn-dot").className = "dot " + kind; $("#conn-text").textContent = text; }
+
+function checkConn() {
+  if (connBusy) return connBusy;
+  clearTimeout(connTimer);
+  setConn("busy", "Đang kết nối hệ thống…");
+  connBusy = (async () => {
+    let retry = true;
+    try {
+      const r = await fetch("/api/ping", { cache:"no-store", signal:makeAbortSignal(15000) });
+      const d = await r.json();
+      if (r.ok && d.ready) { serverReady = true; connFails = 0; setConn("on", "Hệ thống sẵn sàng"); retry = false; }
+      else {
+        serverReady = false;
+        setConn("off", d.reason === "bad_key" ? "Khóa API không hợp lệ, báo quản trị viên" : "Server chưa có khóa API, báo quản trị viên");
+      }
+    } catch (e) {
+      serverReady = false; setConn("off", "Chưa kết nối được, đang thử lại…");
+    }
+    if (retry) { connFails++; connTimer = setTimeout(checkConn, Math.min(60, 8 * connFails) * 1000); }
+    updateRun();
+    connBusy = null;
+    return serverReady;
+  })();
+  return connBusy;
+}
+window.addEventListener("online", checkConn);
+document.addEventListener("visibilitychange", () => { if (!document.hidden && !serverReady) checkConn(); });
+
+function updateRun() {
+  $("#btn-check").disabled = !fileContent || running;
+  $("#why").textContent =
+    running ? "Đang kiểm tra…" :
+    !fileContent ? "Tải file để bắt đầu." :
+    !serverReady ? "Hệ thống đang kết nối, sẽ chạy ngay khi bấm." :
+    "Sẵn sàng chạy.";
+}
+
+// ══════════════════════════════════════════════════════
+// MODEL
+// ══════════════════════════════════════════════════════
+document.querySelectorAll('input[name="model"]').forEach(r =>
+  r.addEventListener("change", () => { selectedModel = r.value; }));
+
+// ══════════════════════════════════════════════════════
+// TẢI FILE
+// ══════════════════════════════════════════════════════
+const drop = $("#drop"), fileInput = $("#file-input");
+drop.addEventListener("dragover", e => { e.preventDefault(); drop.classList.add("over"); });
+drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+drop.addEventListener("drop", e => { e.preventDefault(); drop.classList.remove("over"); if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener("change", () => { if (fileInput.files[0]) handleFile(fileInput.files[0]); });
+
+async function handleFile(f) {
+  const ext = f.name.split(".").pop().toLowerCase();
+  if (!["docx","pdf"].includes(ext)) { showToast("Chỉ hỗ trợ file .docx và .pdf."); return; }
+  if (f.size > 20*1024*1024) { showToast("File vượt quá 20 MB."); return; }
+  $("#drop-main").textContent = "Đang đọc file…"; $("#drop-sub").textContent = f.name;
+  try {
+    const raw = ext === "docx" ? await readDocx(f) : await readPdf(f);
+    fileContent = raw.normalize("NFC"); fileName = f.name; fileSize = f.size;
+    drop.classList.add("has"); $("#st1").classList.add("done");
+    $("#drop-main").textContent = f.name;
+    $("#drop-sub").textContent = `${Math.round(f.size/1024)} KB. Bấm để đổi file.`;
+  } catch (e) {
+    fileContent = ""; drop.classList.remove("has"); $("#st1").classList.remove("done");
+    $("#drop-main").textContent = "Không đọc được file";
+    $("#drop-sub").textContent = e.message;
+  }
+  updateRun();
+}
+
+// ══════════════════════════════════════════════════════
+// TIẾN TRÌNH
+// ══════════════════════════════════════════════════════
+let steps = [];
+function initProgress(labels) {
+  steps = labels.map((l, i) => ({ label:l, id:"ps_"+i, state:"pending" }));
+  $("#prog").innerHTML = steps.map(s => `<li id="${s.id}"><span class="i">○</span>${esc(s.label)}</li>`).join("");
+  $("#prog").style.display = "block"; $("#track").style.display = "block"; $("#prog-fill").style.width = "0%";
+}
+function setStep(idx, state) {
+  if (!steps[idx]) return;
+  steps[idx].state = state;
+  const el = document.getElementById(steps[idx].id);
+  el.className = state === "pending" ? "" : state;
+  el.querySelector(".i").textContent = { done:"✓", active:"●", error:"✗", pending:"○" }[state];
+  $("#prog-fill").style.width = Math.round(steps.filter(s => s.state === "done").length / steps.length * 100) + "%";
+}
+
+// ══════════════════════════════════════════════════════
+// CHECKLIST — tính toán & hiển thị
+// ══════════════════════════════════════════════════════
+function computeChecklist() {
+  clRows = CL_ROWS.map(r => {
+    if (r.kind === "sec") return r;
+    let res, details = null;
+    if (!clRan || !ctx) res = { st:"idle", basis:"", note:"" };
+    else {
+      const fn = EVAL_BY[r.form][lk(r)];
+      res = fn ? fn(ctx) : { st:"review", basis:"Thủ công", note: MANUAL[r.key] || "Thẩm định thủ công." };
+      const dfn = DETAILS_BY[r.form][lk(r)]; details = dfn ? dfn(ctx) : null;
+    }
+    const u = clUser[r.key] || {};
+    return { ...r, hint:r.note, auto:res, details, dtitle:DETAIL_TITLE[r.key] || "Chi tiết từ AI", st:u.st || res.st, edited:!!u.st,
+             note: u.note !== undefined ? u.note : res.note };
+  });
+  // Dòng không đạt có chi tiết thì tự mở lần đầu; người dùng đóng/mở thì giữ theo lựa chọn
+  for (const r of clRows) if (r.kind === "item" && r.details && r.st === "fail" && !touched.has(r.key)) openSet.add(r.key);
+}
+
+function countRows(form) {
+  const items = clRows.filter(r => r.kind === "item" && (!form || r.form === form));
+  return {
+    all: items.length,
+    pass: items.filter(r => r.st === "pass").length,
+    fail: items.filter(r => r.st === "fail").length,
+    wait: items.filter(r => r.st === "review" || r.st === "pending").length
+  };
+}
+
+function verdictHtml(r) {
+  if (r.st === "idle") return `<div class="verdict off"><button class="p" tabindex="-1">Đạt</button><button class="f" tabindex="-1">Không đạt</button></div>`;
+  const ps = r.st === "pass", fl = r.st === "fail";
+  const cap =
+    r.st === "pending" ? `<span class="how wait">Đang chờ AI…</span>` :
+    r.st === "review"  ? `<span class="how wait">Cần thẩm định</span>` :
+    r.edited           ? `<span class="how edit">Đã sửa tay. Bấm lại để bỏ.</span>` :
+                         `<span class="how">Tự động${r.auto.basis ? " · " + esc(r.auto.basis) : ""}</span>`;
+  return `<div class="verdict" role="radiogroup" aria-label="Đánh giá">
+    <button class="p" role="radio" aria-checked="${ps}" data-v="pass">Đạt</button>
+    <button class="f" role="radio" aria-checked="${fl}" data-v="fail">Không đạt</button></div>${cap}`;
+}
+
+function detailHtml(lines, title) {
+  return `<div class="dt"><b class="h">${esc(title)}</b>` + lines.map(raw => {
+    let l = esc(raw.replace(/^[*\-•]\s+/, "• "));
+    if (/^(A|B)\.\s/.test(l) || /^Bổ sung/i.test(l)) return `<div class="sub">${l}</div>`;
+    l = l.replace(/(Lỗi|Thiếu|Cần|Sửa):/g, '<span class="lb">$1:</span>').replace(/→/g, '<span class="ar">→</span>');
+    return `<div>${l}</div>`;
+  }).join("") + `</div>`;
+}
+
+function renderChecklist() {
+  const f = clFilter;
+  const vis = r => f === "all" || (f === "wait" ? (r.st === "review" || r.st === "pending") : r.st === f);
+  let html = `<colgroup><col style="width:50px"><col style="width:17%"><col style="width:33%"><col style="width:76px"><col style="width:156px"><col></colgroup>
+  <thead><tr><th>STT</th><th>Nội dung</th><th>Nguồn thông tin/tiêu chuẩn</th><th>Tính chất</th><th>Đánh giá<br>(Đạt/Không đạt)</th><th>Ghi chú</th></tr></thead><tbody>`;
+  let shown = 0;
+  const rows = clRows.filter(r => r.form === activeForm);
+  rows.forEach((r, i) => {
+    if (r.kind === "sec") {
+      if (f !== "all") {
+        let has = false;
+        for (let j = i + 1; j < rows.length && rows[j].kind === "item"; j++) if (vis(rows[j])) { has = true; break; }
+        if (!has) return;
+      }
+      html += `<tr class="sec"><td class="stt">${r.sec}</td><td colspan="5">${esc(r.title)}</td></tr>`;
+      return;
+    }
+    if (!vis(r)) return;
+    shown++;
+    const isOpen = openSet.has(r.key);
+    html += `<tr class="item${srcOpen.has(r.key) ? " x" : ""}" data-st="${r.st}" data-key="${r.key}">
+      <td class="stt">${r.n}</td>
+      <td class="nd">${esc(r.name)}</td>
+      <td class="src"><div class="t">${esc(r.src)}</div></td>
+      <td class="type${r.type === "Tùy chọn" ? " opt" : ""}">${esc(r.type)}</td>
+      <td class="ev">${verdictHtml(r)}</td>
+      <td><div class="note" contenteditable="${r.st === "idle" ? "false" : "true"}" spellcheck="false" data-key="${r.key}">${esc(r.note)}</div>${r.hint ? `<span class="hintnote">${esc(r.hint)}</span>` : ""}${
+        r.details ? `<button class="more" type="button" data-more="${r.key}" aria-expanded="${isOpen}">Chi tiết (${r.details.length}) ${isOpen ? "▴" : "▾"}</button>` : ""}</td>
+    </tr>`;
+    if (r.details && isOpen) html += `<tr class="detail"><td></td><td colspan="5">${detailHtml(r.details, r.dtitle)}</td></tr>`;
+  });
+  if (!shown && f !== "all") html += `<tr><td colspan="6" class="empty">Không có dòng nào ở trạng thái này.</td></tr>`;
+  html += "</tbody>";
+  $("#form").innerHTML = html;
+  clDirty = false;
+  // Hiện liên kết "Xem đủ" cho các ô tiêu chuẩn bị cắt dòng
+  $("#form").querySelectorAll("tr.item").forEach(tr => {
+    const t = tr.querySelector(".src .t");
+    if (tr.classList.contains("x") || (t && t.scrollHeight > t.clientHeight + 2)) {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "lnk"; b.dataset.src = tr.dataset.key;
+      b.textContent = tr.classList.contains("x") ? "Thu gọn" : "Xem đủ";
+      tr.querySelector(".src").appendChild(b);
+    }
+  });
+}
+
+function renderScore() {
+  const box = $("#score");
+  box.classList.toggle("on", clRan);
+  if (!clRan) return;
+  const c = countRows(activeForm), pct = n => (c.all ? n / c.all * 100 : 0).toFixed(1) + "%";
+  $("#score-text").textContent = running
+    ? `Đang điền kết quả: ${c.pass} đạt, ${c.fail} không đạt, ${c.wait} cần thẩm định.`
+    : c.fail + c.wait === 0 ? `Cả ${c.all} dòng đều đạt.`
+    : `Cần xử lý ${c.fail + c.wait} dòng: ${c.fail} không đạt và ${c.wait} cần thẩm định. ${c.pass} dòng đạt.`;
+  $("#meter").innerHTML = `<i class="p" style="width:${pct(c.pass)}"></i><i class="f" style="width:${pct(c.fail)}"></i><i class="w" style="width:${pct(c.wait)}"></i>`;
+  $("#meter").setAttribute("aria-label", `${c.pass} đạt, ${c.fail} không đạt, ${c.wait} cần thẩm định, trên ${c.all} dòng`);
+  renderTabs();
+  const defs = [["all","Tất cả",c.all],["fail","Không đạt",c.fail],["wait","Cần thẩm định",c.wait],["pass","Đạt",c.pass]];
+  $("#chips").innerHTML = defs.map(([k,l,n]) =>
+    `<button class="chip" type="button" data-f="${k}" aria-pressed="${clFilter === k}">${l} <b>${n}</b></button>`).join("");
+}
+
+function renderTabs() {
+  $("#tabs").innerHTML = CL_FORMS.map(f => {
+    const c = countRows(f.id), need = c.fail + c.wait;
+    return `<button class="tab" role="tab" type="button" data-form="${f.id}" aria-selected="${f.id === activeForm}">${esc(f.tab)}${clRan && need ? `<span class="n" title="Dòng cần xử lý">${need}</span>` : ""}</button>`;
+  }).join("");
+}
+function updateHead() {
+  const f = CL_FORMS.find(x => x.id === activeForm);
+  $("#sh-title").textContent = f.title;
+  $("#sheet-sub").textContent = f.sub + (fileName && clRan ? ` Tài liệu: ${fileName}.` : "");
+}
+$("#tabs").addEventListener("click", e => {
+  const b = e.target.closest(".tab"); if (!b || b.dataset.form === activeForm) return;
+  activeForm = b.dataset.form; clFilter = "all";
+  updateHead(); setLegend(); renderChecklist(); renderScore();
+});
+
+function refreshChecklist() {
+  computeChecklist();
+  const ae = document.activeElement;
+  if (ae && ae.classList && ae.classList.contains("note")) { clDirty = true; renderScore(); return; }
+  renderChecklist(); renderScore();
+}
+
+$("#form").addEventListener("click", e => {
+  const v = e.target.closest("button[data-v]");
+  if (v) {
+    const key = v.closest("tr").dataset.key, val = v.dataset.v;
+    const u = clUser[key] || (clUser[key] = {});
+    if (u.st === val) delete u.st; else u.st = val;
+    refreshChecklist(); return;
+  }
+  const m = e.target.closest("button[data-more]");
+  if (m) {
+    const k = m.dataset.more; touched.add(k);
+    openSet.has(k) ? openSet.delete(k) : openSet.add(k);
+    renderChecklist(); return;
+  }
+  const s = e.target.closest("button[data-src]");
+  if (s) {
+    const k = s.dataset.src;
+    srcOpen.has(k) ? srcOpen.delete(k) : srcOpen.add(k);
+    renderChecklist();
+  }
+});
+$("#form").addEventListener("input", e => {
+  const n = e.target.closest(".note");
+  if (!n) return;
+  (clUser[n.dataset.key] || (clUser[n.dataset.key] = {})).note = n.textContent;
+});
+$("#form").addEventListener("focusout", e => {
+  if (e.target.classList && e.target.classList.contains("note") && clDirty) { computeChecklist(); renderChecklist(); renderScore(); }
+});
+$("#chips").addEventListener("click", e => {
+  const b = e.target.closest(".chip"); if (!b) return;
+  clFilter = b.dataset.f; renderChecklist(); renderScore();
+});
+
+function setLegend() {
+  const extra = activeForm === "BM3" ? "Công cụ không có cơ sở dữ liệu pháp luật nên chỉ phát hiện dấu hiệu trong văn bản (văn bản pháp luật được dẫn chiếu, cụm dẫn chiếu chung chung). Việc đối chiếu nội dung pháp lý do người thẩm định quyết định. " : "";
+  $("#legend").textContent = extra + (clRan
+    ? "Đạt ở dòng cấu trúc nghĩa là có mục đúng vị trí, chưa đánh giá chất lượng nội dung. Dòng Cần thẩm định do người thẩm định quyết định. Bấm Đạt hoặc Không đạt để sửa; kết quả sửa tay được giữ khi tải file."
+    : "Chưa có kết quả. Bảng dưới là toàn bộ nội dung cần kiểm tra. Sau khi chạy, cột Đánh giá được điền tự động và có thể sửa tay.");
+  $("#legend").textContent = $("#legend").textContent.trim();
+}
+
+// ══════════════════════════════════════════════════════
+// LUỒNG CHÍNH
+// ══════════════════════════════════════════════════════
+$("#btn-check").addEventListener("click", async () => {
+  if (!fileContent || running) return;
+  running = true; updateRun();
+  if (!serverReady) {
+    $("#why").textContent = "Đang kết nối hệ thống…";
+    if (!(await checkConn())) { running = false; updateRun(); showToast("Chưa kết nối được hệ thống. Thử lại sau ít phút hoặc báo quản trị viên."); return; }
+  }
+  clRan = true; clUser = {}; clFilter = "all"; aiDone = []; struct = []; lastRunAt = new Date();
+  openSet.clear(); touched.clear(); srcOpen.clear();
+  ctx = { text:fileContent, upper:fileContent.toUpperCase(), S:{}, ai:{} };
+  $("#st3").classList.remove("done");
+  $("#btn-xlsx").disabled = true; $("#btn-txt").disabled = true;
+
+  const labels = ["Đọc nội dung tài liệu", "Đối chiếu cấu trúc với biểu mẫu", "Ẩn thông tin nhạy cảm",
+                  ...AI_CHECKS.map(c => c.short), "Hoàn tất checklist"];
+  initProgress(labels);
+
+  try {
+    setStep(0, "active"); await sleep(200); setStep(0, "done");
+
+    setStep(1, "active");
+    struct = checkStructure(fileContent);
+    ctx.S = Object.fromEntries(struct.map(r => [r.id, r]));
+    updateHead(); setLegend(); refreshChecklist();
+    $("#btn-xlsx").disabled = false; $("#btn-txt").disabled = false;
+    setStep(1, "done");
+    $("#score").scrollIntoView({ behavior:"smooth", block:"start" });
+
+    // Ẩn thông tin nhạy cảm trước khi gửi AI
+    setStep(2, "active");
+    redactInfo = redact(fileContent);
+    const safeText = redactInfo.text;
+    const content62 = extract62(safeText);
+    const nSec = extractAllSections(safeText).length;
+    $("#privacy-sum").textContent = redactInfo.total
+      ? `Đã ẩn ${redactInfo.total} thông tin trước khi gửi AI: ${redactSummary(redactInfo.counts)}.`
+      : "Không phát hiện thông tin nhạy cảm cần ẩn. Họ tên chỉ được ẩn khi đi kèm nhãn hoặc danh xưng.";
+    $("#privacy-text").value = safeText.slice(0, 60000);
+    $("#privacy-view").hidden = false;
+    setStep(2, "done");
+    if (nSec === 0) showToast("Không tìm thấy mục Thuyết minh hoặc Diễn giải. Kiểm tra lại file.");
+    else if (nSec > 1) showToast(`Tìm thấy ${nSec} mục Thuyết minh/Diễn giải, đã ghép lại để phân tích.`);
+
+    for (let i = 0; i < AI_CHECKS.length; i++) {
+      const c = AI_CHECKS[i], si = 3 + i;
+      setStep(si, "active");
+      if (i > 0) await sleep(8000);
+      const input = c.id === "risk_kpi" ? safeText : content62;
+      let res, failed = false;
+      try {
+        res = !input ? "⚠️ Không tìm thấy nội dung phù hợp trong tài liệu" : await callGemini(c.prompt, input);
+      } catch (e) { res = `❌ Lỗi Gemini: ${e.message}`; failed = true; }
+      ctx.ai[c.id] = res;
+      aiDone.push({ check:c, result:res });
+      setStep(si, failed ? "error" : "done");
+      refreshChecklist();
+      if (failed) showToast(`${c.short}: ${res.slice(0, 160)}`);
+    }
+
+    const li = labels.length - 1;
+    setStep(li, "active"); await sleep(150); setStep(li, "done");
+    $("#st3").classList.add("done");
+    running = false; renderScore();
+    showToast("Kiểm tra hoàn tất.");
+  } catch (e) {
+    showToast("Lỗi hệ thống: " + e.message);
+  } finally {
+    running = false; updateRun();
+  }
+});
+
+// ══════════════════════════════════════════════════════
+// XUẤT FILE
+// ══════════════════════════════════════════════════════
+const STLABEL = { pass:"Đạt", fail:"Không đạt", review:"Cần thẩm định", pending:"Cần thẩm định", idle:"" };
+function baseName() { return fileName.replace(/\.[^.]+$/, "").replace(/[\\/:*?"<>|]+/g, "_"); }
+function download(blob, name) {
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+
+function buildReport() {
+  const when = (lastRunAt || new Date()).toLocaleString("vi-VN");
+  let t = `VTG — Báo cáo kiểm tra tuân thủ quy trình\nTài liệu: ${fileName}\nModel AI: ${selectedModel}\nThời điểm: ${when}\n`;
+  if (redactInfo) t += `Thông tin đã ẩn trước khi gửi AI: ${redactInfo.total ? redactSummary(redactInfo.counts) : "không có"}\n`;
+  t += `${"=".repeat(60)}\n\n`;
+  for (const f of CL_FORMS) {
+    const c = countRows(f.id);
+    t += `${f.title}\nĐạt ${c.pass} | Không đạt ${c.fail} | Cần thẩm định ${c.wait} | Tổng ${c.all}\n${"-".repeat(40)}\n`;
+    for (const r of clRows.filter(x => x.form === f.id)) {
+      if (r.kind === "sec") { t += `\n${r.sec}. ${r.title}\n`; continue; }
+      t += `  ${r.n}. [${STLABEL[r.st] || "—"}] ${r.name}${r.edited ? " (sửa tay)" : ""}${r.note ? " — " + r.note.replace(/\s*\n\s*/g, " ") : ""}\n`;
+      if (r.details) for (const l of r.details) t += `        ${l}\n`;
+    }
+    t += "\n\n";
+  }
+  return t;
+}
+$("#btn-txt").addEventListener("click", () => {
+  if (!clRan) return;
+  download(new Blob([buildReport()], { type:"text/plain;charset=utf-8" }), `Bao_cao_tuan_thu_${baseName()}.txt`);
+  showToast("Đã tải báo cáo .txt.");
+});
+
+function loadScript(src) {
+  return new Promise((res, rej) => {
+    const s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = () => rej(new Error("load"));
+    document.head.appendChild(s);
+  });
+}
+
+$("#btn-xlsx").addEventListener("click", async () => {
+  if (!clRan) return;
+  const btn = $("#btn-xlsx"); btn.disabled = true; btn.textContent = "Đang tạo file…";
+  try {
+    if (!window.ExcelJS) {
+      try { await loadScript("https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"); }
+      catch { await loadScript("https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"); }
+    }
+    const buf = await buildXlsx();
+    download(new Blob([buf], { type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
+             `Checklist_tham_dinh_${baseName()}.xlsx`);
+    showToast("Đã tải checklist .xlsx.");
+  } catch (e) {
+    showToast("Không tạo được file Excel: " + e.message);
+  } finally { btn.disabled = false; btn.textContent = "Tải checklist (.xlsx)"; }
+});
+
+async function buildXlsx() {
+  const wb = new ExcelJS.Workbook(); wb.creator = "VTG Compliance Checker";
+  const thin = { style:"thin", color:{ argb:"FFBFC7D3" } };
+  const border = { top:thin, left:thin, bottom:thin, right:thin };
+  const wrap = { wrapText:true, vertical:"top" };
+  const when = (lastRunAt || new Date()).toLocaleString("vi-VN");
+
+  const fills = { pass:"FFE2F4EA", fail:"FFFDE7EA", review:"FFFFF1D6", pending:"FFFFF1D6" };
+  const fonts = { pass:"FF0F7B4D", fail:"FFC4122F" };
+  for (const f of CL_FORMS) {
+    const ws = wb.addWorksheet(f.tab.split(":")[0], {
+      views:[{ state:"frozen", ySplit:4 }],
+      pageSetup:{ orientation:"landscape", fitToPage:true, fitToWidth:1, fitToHeight:0 }
+    });
+    ws.columns = [{width:7},{width:34},{width:78},{width:12},{width:16},{width:50}];
+    ws.mergeCells("A1:F1"); ws.getCell("A1").value = f.title;
+    ws.getCell("A1").font = { bold:true, size:15 }; ws.getCell("A1").alignment = { horizontal:"center" };
+    ws.mergeCells("A2:F2"); ws.getCell("A2").value = f.sub;
+    ws.getCell("A2").font = { italic:true, size:10 }; ws.getCell("A2").alignment = { horizontal:"center" };
+    ws.mergeCells("A3:F3");
+    ws.getCell("A3").value = `Tài liệu: ${fileName}. Kiểm tra lúc ${when} bằng VTG Compliance Checker, model ${selectedModel}. Ô Đánh giá để trống (màu vàng) là dòng cần người thẩm định quyết định.`;
+    ws.getCell("A3").font = { italic:true, size:10, color:{ argb:"FF566174" } };
+    const hr = ws.getRow(4);
+    ["STT","Nội dung","Nguồn thông tin/tiêu chuẩn","Tính chất","Đánh giá (Đạt/Không đạt)","Ghi chú"].forEach((h, i) => {
+      const c = hr.getCell(i + 1); c.value = h;
+      c.font = { bold:true }; c.alignment = { horizontal:"center", vertical:"middle", wrapText:true };
+      c.fill = { type:"pattern", pattern:"solid", fgColor:{ argb:"FFF8D7B5" } }; c.border = border;
+    });
+    hr.height = 32;
+    for (const r of clRows.filter(x => x.form === f.id)) {
+      const row = ws.addRow(r.kind === "sec"
+        ? [r.sec, r.title, "", "", "", ""]
+        : [r.n, r.name, r.src, r.type, r.st === "pass" || r.st === "fail" ? STLABEL[r.st] : "", [r.note, r.hint].filter(Boolean).join("\n")]);
+      row.eachCell({ includeEmpty:true }, (c, i) => {
+        c.border = border; c.alignment = i === 1 || i === 4 || i === 5 ? { ...wrap, horizontal:"center" } : wrap;
+        if (r.kind === "sec") { c.font = { bold:true }; c.fill = { type:"pattern", pattern:"solid", fgColor:{ argb:"FFF1F3F7" } }; }
+      });
+      if (r.kind === "item") {
+        const ec = row.getCell(5);
+        ec.fill = { type:"pattern", pattern:"solid", fgColor:{ argb:fills[r.st] || "FFFFFFFF" } };
+        if (fonts[r.st]) ec.font = { bold:true, color:{ argb:fonts[r.st] } };
+        row.getCell(2).font = { bold:true };
+      }
+    }
+  }
+
+  const withDetails = clRows.filter(r => r.kind === "item" && r.details);
+  if (withDetails.length) {
+    const w2 = wb.addWorksheet("Chi tiết");
+    w2.columns = [{width:12},{width:38},{width:34},{width:120}];
+    const h = w2.addRow(["Biểu mẫu","Nội dung","Loại chi tiết","Chi tiết"]); h.font = { bold:true };
+    for (const r of withDetails) w2.addRow([r.form === "BM3" ? "Biểu mẫu 3" : "Biểu mẫu 4", `${r.sec}.${r.n} ${r.name}`, r.dtitle, r.details.join("\n")]);
+    w2.eachRow(r => r.eachCell(c => { c.border = border; c.alignment = wrap; }));
+  }
+  return wb.xlsx.writeBuffer();
+}
+
+// ══════════════════════════════════════════════════════
+// KHỞI ĐỘNG
+// ══════════════════════════════════════════════════════
+computeChecklist(); updateHead(); renderChecklist(); setLegend(); renderTabs(); updateRun();
+checkConn();
 </script>
 </body>
 </html>
