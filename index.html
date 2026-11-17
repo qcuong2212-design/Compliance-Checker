@@ -957,12 +957,18 @@ const EVAL = {
     const b = evalStruct(c, ["nd_luudo"]);
     if (b.st === "fail") return b;
     const e = stepErrors(c, "content_step_name");
+    const f = c.flow;
+    const unread = "Công cụ chưa đọc được nội dung lưu đồ (ký hiệu BPMN, đánh số hoạt động, chủ thể, luồng kiểm soát). Cần thẩm định thủ công.";
+    const flow =
+      !f ? "Công cụ chỉ đọc chữ trong file, chưa đếm được hình ảnh lưu đồ. " + unread :
+      f.found && f.imgs > 0 ? `Mục Lưu đồ có ${f.imgs} hình ảnh. ` + unread :
+      f.found ? "Không thấy hình ảnh trong mục Lưu đồ. Công cụ không đọc được hình vẽ, khung chữ và đối tượng nhúng. Cần thẩm định thủ công." :
+      `Không xác định được vị trí mục Lưu đồ để đếm hình ảnh (tài liệu có ${f.total} hình ảnh). ` + unread;
     if (e.state === "errs")
-      return { st:"fail", basis:"Cấu trúc + AI", note:`AI: ${e.n} tên bước chưa đúng cú pháp động từ + tân ngữ. Lưu đồ dạng hình ảnh chưa kiểm tra được.` };
-    const base = "Lưu đồ là hình ảnh nên công cụ không đọc được ký hiệu BPMN và số thứ tự; cần thẩm định thủ công.";
-    if (e.state === "clean") return { st:"review", basis:"Cấu trúc + AI", note:"Tên các bước đúng cú pháp động từ + tân ngữ. " + base };
-    if (e.state === "pending") return { st:"review", basis:"Cấu trúc + AI", note: base + " Đang chờ AI kiểm tra tên bước." };
-    return { st:"review", basis:"Cấu trúc", note: base };
+      return { st:"fail", basis:"Cấu trúc + AI", note:`Cột Hoạt động trong Thuyết minh: AI phát hiện ${e.n} tên bước chưa đúng cú pháp động từ + tân ngữ. ` + flow };
+    if (e.state === "clean") return { st:"review", basis:"Cấu trúc + AI", note:"Cột Hoạt động trong Thuyết minh: tên các bước đúng cú pháp động từ + tân ngữ. " + flow };
+    if (e.state === "pending") return { st:"review", basis:"Cấu trúc + AI", note: flow + " Đang chờ AI kiểm tra tên bước." };
+    return { st:"review", basis:"Cấu trúc", note: flow };
   },
   "II.8": c => {
     const b = evalStruct(c, ["nd_thuyetminh"]);
@@ -1080,6 +1086,34 @@ async function readDocx(f) {
   const result = await mammoth.extractRawText({ arrayBuffer: ab });
   if (!result.value) throw new Error("Không trích xuất được nội dung DOCX");
   return result.value;
+}
+
+// Đếm hình ảnh nằm giữa tiêu đề "Lưu đồ" và tiêu đề "Thuyết minh/Diễn giải" kế tiếp.
+// Chỉ đếm ảnh có thật trong file; không đọc nội dung ảnh.
+async function analyzeDocxFlow(f) {
+  try {
+    const ab = await f.arrayBuffer();
+    const r = await mammoth.convertToHtml({ arrayBuffer: ab }, {
+      convertImage: mammoth.images.imgElement(() => Promise.resolve({ src:"#" }))
+    });
+    const doc = new DOMParser().parseFromString(r.value, "text/html");
+    const els = [...doc.body.children];
+    const txt = el => el.textContent.replace(/\s+/g, " ").trim().toUpperCase().normalize("NFC");
+    const isTable = el => el.tagName === "TABLE";
+    const HEAD = /^(?:\d+(?:\.\d+)*[.)]?\s*)?LƯU ĐỒ(?:\s+(?:QUY TRÌNH|QT))?[\s:.\-–]*$/;
+    const NEXT = /^(?:\d+(?:\.\d+)*[.)]?\s*)?(?:THUYẾT MINH|DIỄN GIẢI)/;
+    const NUM  = /^\d+(?:\.\d+)*[.)]?\s+\S/;
+    let best = null;
+    els.forEach((el, i) => {
+      if (isTable(el) || !HEAD.test(txt(el))) return;
+      let j = els.findIndex((e, k) => k > i && !isTable(e) && NEXT.test(txt(e)));
+      if (j < 0) j = els.findIndex((e, k) => k > i && !isTable(e) && txt(e).length < 120 && NUM.test(txt(e)));
+      if (j < 0) j = els.length;
+      const n = els.slice(i + 1, j).reduce((a, e) => a + (e.tagName === "IMG" ? 1 : e.querySelectorAll("img").length), 0);
+      if (!best || n >= best.imgs) best = { imgs:n };
+    });
+    return { found:!!best, imgs:best ? best.imgs : 0, total:doc.querySelectorAll("img").length };
+  } catch { return null; }
 }
 
 async function readPdf(f) {
@@ -1302,7 +1336,7 @@ let fileContent = "", fileName = "", fileSize = 0;
 let serverReady = false, running = false;
 let selectedModel = "gemini-2.5-flash-lite";
 let ctx = null, clRan = false, clRows = [], clUser = {}, clFilter = "all", activeForm = "BM3";
-let struct = [], aiDone = [], clDirty = false, lastRunAt = null, redactInfo = null;
+let struct = [], aiDone = [], clDirty = false, lastRunAt = null, redactInfo = null, fileFlow = null;
 const openSet = new Set(), touched = new Set(), srcOpen = new Set();
 
 function showToast(msg) {
@@ -1378,6 +1412,7 @@ async function handleFile(f) {
   try {
     const raw = ext === "docx" ? await readDocx(f) : await readPdf(f);
     fileContent = raw.normalize("NFC"); fileName = f.name; fileSize = f.size;
+    fileFlow = ext === "docx" ? await analyzeDocxFlow(f) : null;
     drop.classList.add("has"); $("#st1").classList.add("done");
     $("#drop-main").textContent = f.name;
     $("#drop-sub").textContent = `${Math.round(f.size/1024)} KB. Bấm để đổi file.`;
@@ -1608,7 +1643,7 @@ $("#btn-check").addEventListener("click", async () => {
   clRan = true; clUser = {}; clFilter = "all"; aiDone = []; struct = []; lastRunAt = new Date();
   histSnap = null; curEntryId = null; $("#hist-banner").hidden = true;
   openSet.clear(); touched.clear(); srcOpen.clear();
-  ctx = { text:fileContent, upper:fileContent.toUpperCase(), S:{}, ai:{} };
+  ctx = { text:fileContent, upper:fileContent.toUpperCase(), S:{}, ai:{}, flow:fileFlow };
   $("#st3").classList.remove("done");
   $("#btn-xlsx").disabled = true; $("#btn-txt").disabled = true;
 
