@@ -1066,7 +1066,7 @@ function mapCompare(c) {
   return { m, refs, rows, extra };
 }
 function mapLead(m) {
-  return `Bảng ánh xạ (sheet "${m.sheet}") có ${m.rows} dòng có nội dung, kể cả dòng tiêu đề và hướng dẫn nếu có.`;
+  return `Bảng ánh xạ (sheet "${m.sheet}"${m.how === "file chỉ có một sheet" ? ", lấy vì file chỉ có một sheet" : ""}) có ${m.rows} dòng có nội dung, kể cả dòng tiêu đề và hướng dẫn nếu có.`;
 }
 const VAGUE_RE = /(?:theo|đúng|tuân thủ|căn cứ|thực hiện)\s+(?:đúng\s+)?(?:các\s+)?quy định\s+(?:của\s+)?(?:pháp luật|nhà nước)/gi;
 function vagueRefs(c) {
@@ -1101,7 +1101,9 @@ const EVAL3 = {
     if (m && !m.sheet)
       return { st:"review", basis:"Bảng đính kèm", note:`File ${m.file} không có sheet "Bang anh xa YC PL" (các sheet: ${m.sheets.join(", ") || "không có"}). Cần kiểm tra lại file đính kèm.` };
     if (m && !m.rows)
-      return { st:"fail", basis:"Bảng đính kèm", note:`Sheet "${m.sheet}" không có nội dung.` };
+      return m.how === "file chỉ có một sheet"
+        ? { st:"review", basis:"Bảng đính kèm", note:`File ${m.file} chỉ có một sheet tên "${m.sheet}" (không phải "Bang anh xa YC PL") và sheet này không có nội dung. Cần kiểm tra lại file đính kèm.` }
+        : { st:"fail", basis:"Bảng đính kèm", note:`Sheet "${m.sheet}" không có nội dung.` };
     if (m) {
       const mc = mapCompare(c), lead = mapLead(m);
       if (mc.refs === null) return { st:"review", basis:"Bảng đính kèm", note:lead + " Chưa đối chiếu được với mục I.1 vì thiếu mục Tài liệu liên quan." };
